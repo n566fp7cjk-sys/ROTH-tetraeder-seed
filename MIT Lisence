@@ -1,0 +1,38 @@
+
+## 6. **.github/workflows/deploy.yml** (Auto-deploy):
+```yaml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Emscripten
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          source ./emsdk_env.sh
+          echo "EMSDK=$PWD" >> $GITHUB_ENV
+          
+      - name: Compile RoTH to WASM
+        run: |
+          source $EMSDK/emsdk_env.sh
+          cd roth
+          chmod +x compile-wasm.sh
+          ./compile-wasm.sh
+          
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
