@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoTH Tetraeder Seed Ceremony</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            overflow: hidden;
+        }
+        
+        #container { 
+            width: 100vw; 
+            height: 100vh; 
+            position: relative;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 350px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        .vertex {
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        
+        .vertex:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+        
+        .vertex.selected {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: currentColor;
+            font-weight: bold;
+        }
+        
+        #coordinates {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        #passphrase {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+        
+        #passphrase::placeholder {
+            color: #aaa;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        #seed-output {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .vertex-ψ₁ { color: #FF6B6B; }
+        .vertex-ψ₂ { color: #4ECDC4; }
+        .vertex-ψ₃ { color: #45B7D1; }
+        .vertex-ψ₄ { color: #FFE66D; }
+        
+        h1 {
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    
+    <div id="ui">
+        <h1>🔺 RoTH Seed Ceremony</h1>
+        
+        <div style="margin-bottom: 20px;">
+            <strong>Velg ditt hjørne:</strong>
+            <div class="vertex vertex-ψ₁" onclick="app.selectVertex('ψ₁')">ψ₁: Rød (Primær)</div>
+            <div class="vertex vertex-ψ₂" onclick="app.selectVertex('ψ₂')">ψ₂: Blå (Sekundær)</div>
+            <div class="vertex vertex-ψ₃" onclick="app.selectVertex('ψ₃')">ψ₃: Grønn (Tertiær)</div>
+            <div class="vertex vertex-ψ₄" onclick="app.selectVertex('ψ₄')">ψ₄: Gul (Kvaternær)</div>
+        </div>
+        
+        <div id="coordinates">
+            <div>📍 <strong>Posisjon:</strong> <span id="pos-x">0.0</span>, <span id="pos-y">0.0</span>, <span id="pos-z">0.0</span></div>
+            <div>🔄 <strong>Rotasjon:</strong> <span id="rot-x">0.0°</span>, <span id="rot-y">0.0°</span>, <span id="rot-z">0.0°</span></div>
+            <div>🎯 <strong>Hjørne:</strong> <span id="current-vertex">ψ₁</span></div>
+        </div>
+        
+        <input type="text" id="passphrase" placeholder="Skriv din personlige passfrase her...">
+        <button onclick="app.generateSeed()">🎲 Generer Kryptografisk Seed</button>
+        
+        <div id="seed-output">
+            <!-- Seed vil vises her -->
+        </div>
+    </div>
+
+    <script src="js/wasm-loader.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // Start applikasjonen når siden lastes
+        window.addEventListener('load', () => {
+            window.app = new TetrahedronApp();
+        });
+    </script>
+</body>
+</html>
