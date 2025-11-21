@@ -300,40 +300,16 @@ function updateCoordinates() {
 }
 
 function generateSeed() {
+    const position = tetrahedron.position;
     const rotation = tetrahedron.rotation;
     
     document.getElementById('seed-output').innerHTML = `
         <strong>Test Data:</strong><br>
+        Posisjon: ${position.x.toFixed(2)}, ${position.y.toFixed(2)}, ${position.z.toFixed(2)}<br>
         Rotasjon: ${(rotation.x * 180/Math.PI).toFixed(1)}°, ${(rotation.y * 180/Math.PI).toFixed(1)}°, ${(rotation.z * 180/Math.PI).toFixed(1)}°<br>
         Hjørne: ${selectedVertex}<br>
-        <em>Rotasjonen er det viktigste for seed-generering!</em>
+        <em>Hash kommer senere...</em>
     `;
-}    
-    // Show loading
-    btn.innerHTML = '⏳ Genererer...';
-    btn.classList.add('loading');
-    
-    setTimeout(() => {
-        try {
-            // Forbered input data med ekte tetraeder-posisjon
-            const inputData = prepareInputData(position, rotation, selectedVertex, passphrase);
-            
-            // Generer hash med RoTH
-            const seedBytes = roth.hash(inputData.rawBytes);
-            const seedHex = bytesToHex(seedBytes);
-            
-            displayResult(inputData, seedHex, seedBytes);
-            
-        } catch (error) {
-            document.getElementById('seed-output').innerHTML = 
-                '❌ Feil under hash-generering: ' + error.message;
-            console.error('Feil detaljer:', error);
-        } finally {
-            // Reset button
-            btn.innerHTML = '🎲 Generer Seed';
-            btn.classList.remove('loading');
-        }
-    }, 100);
 }
         
         function prepareInputData(position, rotation, vertex, passphrase) {
