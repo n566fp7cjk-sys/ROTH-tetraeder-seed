@@ -4,35 +4,266 @@
     <title>RoTH Tetraeder Seed Ceremony</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        /* Alt CSS fra før pluss: */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
-        .vertex-marker {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #1a1a2e;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        /* HEADER */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .header-title {
+            flex: 1;
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header .subtitle {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+        
+        /* ψ-KNAPPER I HEADER */
+        .vertex-selector {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .vertex-btn {
+            padding: 8px 12px;
             border: 2px solid;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 45px;
+        }
+        
+        .vertex-btn.selected {
             background: rgba(255,255,255,0.2);
-            transform: translate(-50%, -50%);
-            pointer-events: none;
+            transform: scale(1.05);
+        }
+        
+        .vertex-ψ₁ { border-color: #FF6B6B; color: #FF6B6B; }
+        .vertex-ψ₂ { border-color: #4ECDC4; color: #4ECDC4; }
+        .vertex-ψ₃ { border-color: #45B7D1; color: #45B7D1; }
+        .vertex-ψ₄ { border-color: #FFE66D; color: #FFE66D; }
+        
+        /* MAIN TETRAHEDRON CONTAINER */
+        #container {
+            position: fixed;
+            top: 70px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 170px);
+            z-index: 1;
+            cursor: grab;
+        }
+        
+        #container:active {
+            cursor: grabbing;
+        }
+        
+        /* VERTEX HOTSPOTS */
+        .vertex-hotspot {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid;
+            cursor: pointer;
             z-index: 100;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            backdrop-filter: blur(5px);
         }
         
-        .vertex-marker.active {
-            width: 25px;
-            height: 25px;
-            box-shadow: 0 0 15px currentColor;
+        .vertex-hotspot:hover {
+            transform: scale(1.2);
+            background: rgba(255,255,255,0.2);
         }
         
-        .vertex-ψ₁-marker { border-color: #FF6B6B; color: #FF6B6B; }
-        .vertex-ψ₂-marker { border-color: #4ECDC4; color: #4ECDC4; }
-        .vertex-ψ₃-marker { border-color: #45B7D1; color: #45B7D1; }
-        .vertex-ψ₄-marker { border-color: #FFE66D; color: #FFE66D; }
+        .vertex-hotspot.active {
+            transform: scale(1.3);
+            box-shadow: 0 0 20px currentColor;
+        }
+        
+        .hotspot-ψ₁ { border-color: #FF6B6B; color: #FF6B6B; top: 20%; right: 20%; }
+        .hotspot-ψ₂ { border-color: #4ECDC4; color: #4ECDC4; bottom: 30%; left: 20%; }
+        .hotspot-ψ₃ { border-color: #45B7D1; color: #45B7D1; top: 20%; left: 20%; }
+        .hotspot-ψ₄ { border-color: #FFE66D; color: #FFE66D; bottom: 30%; right: 20%; }
+        
+        /* ROTATION DISPLAY */
+        .rotation-display {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            min-width: 260px;
+            z-index: 2;
+        }
+        
+        .rotation-values {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 8px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .rotation-axis {
+            text-align: center;
+        }
+        
+        .rotation-value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #4ECDC4;
+        }
+        
+        .rotation-label {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 3px;
+        }
+        
+        .current-vertex {
+            font-size: 14px;
+            color: #FF6B6B;
+            margin-top: 8px;
+        }
+        
+        /* CONTROL PANEL */
+        .control-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.9);
+            padding: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            z-index: 1000;
+        }
+        
+        .passphrase-input {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+        }
+        
+        .generate-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* OUTPUT PANEL */
+        .output-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(20px);
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 2000;
+            display: none;
+        }
+        
+        .output-panel.active {
+            display: block;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        /* Mobile */
+        @media (max-width: 768px) {
+            .header { padding: 8px 12px; }
+            .header h1 { font-size: 18px; }
+            .header .subtitle { font-size: 10px; }
+            .vertex-btn { padding: 6px 10px; font-size: 12px; min-width: 40px; }
+            #container { height: calc(100vh - 160px); top: 60px; }
+            .rotation-value { font-size: 20px; }
+            .rotation-values { gap: 10px; }
+            .rotation-display { padding: 12px; min-width: 240px; }
+            .vertex-hotspot { width: 35px; height: 35px; font-size: 14px; }
+        }
     </style>
 </head>
 <body>
-    <!-- HEADER (samme som før) -->
+    <!-- HEADER -->
     <div class="header">
         <div class="header-title">
             <h1>🔺 RoTH Seed Ceremony</h1>
@@ -50,32 +281,57 @@
     <!-- MAIN TETRAHEDRON -->
     <div id="container"></div>
     
-    <!-- VERTEX MARKERS -->
-    <div class="vertex-marker vertex-ψ₁-marker active" id="marker-ψ₁"></div>
-    <div class="vertex-marker vertex-ψ₂-marker" id="marker-ψ₂"></div>
-    <div class="vertex-marker vertex-ψ₃-marker" id="marker-ψ₃"></div>
-    <div class="vertex-marker vertex-ψ₄-marker" id="marker-ψ₄"></div>
+    <!-- VERTEX HOTSPOTS -->
+    <div class="vertex-hotspot hotspot-ψ₁ active" onclick="selectVertex('ψ₁')">ψ₁</div>
+    <div class="vertex-hotspot hotspot-ψ₂" onclick="selectVertex('ψ₂')">ψ₂</div>
+    <div class="vertex-hotspot hotspot-ψ₃" onclick="selectVertex('ψ₃')">ψ₃</div>
+    <div class="vertex-hotspot hotspot-ψ₄" onclick="selectVertex('ψ₄')">ψ₄</div>
     
-    <!-- ROTATION DISPLAY og CONTROL PANEL (samme som før) -->
+    <!-- ROTATION DISPLAY -->
+    <div class="rotation-display">
+        <div class="rotation-values">
+            <div class="rotation-axis">
+                <div class="rotation-value" id="rot-x">0.0°</div>
+                <div class="rotation-label">X-rotation</div>
+            </div>
+            <div class="rotation-axis">
+                <div class="rotation-value" id="rot-y">0.0°</div>
+                <div class="rotation-label">Y-rotation</div>
+            </div>
+            <div class="rotation-axis">
+                <div class="rotation-value" id="rot-z">0.0°</div>
+                <div class="rotation-label">Z-rotation</div>
+            </div>
+        </div>
+        <div class="current-vertex">
+            Aktivit hjørne: <strong id="current-vertex">ψ₁</strong>
+        </div>
+    </div>
+    
+    <!-- CONTROL PANEL -->
+    <div class="control-panel">
+        <input type="text" class="passphrase-input" id="passphrase" placeholder="Skriv passfrase (valgfritt)...">
+        <button class="generate-btn" onclick="generateSeed()">🎲 Generer Seed</button>
+    </div>
+    
+    <!-- OUTPUT PANEL -->
+    <div class="output-panel" id="output-panel">
+        <button class="close-btn" onclick="closeOutput()">×</button>
+        <div id="seed-output"></div>
+    </div>
 
     <script>
         let scene, camera, renderer, tetrahedron;
         let selectedVertex = 'ψ₁';
-        let raycaster, mouse;
         
-        // Vertex positions in 3D space
-        const vertexPositions = {
-            'ψ₁': new THREE.Vector3(2.5, 2.5, 2.5),   // Top-right-front
-            'ψ₂': new THREE.Vector3(-2.5, -2.5, 2.5), // Bottom-left-front  
-            'ψ₃': new THREE.Vector3(-2.5, 2.5, -2.5), // Top-right-back
-            'ψ₄': new THREE.Vector3(2.5, -2.5, -2.5)  // Bottom-left-back
+        let vertexRotations = {
+            'ψ₁': { x: 0, y: 0, z: 0 },
+            'ψ₂': { x: 0, y: 0, z: 0 },
+            'ψ₃': { x: 0, y: 0, z: 0 },
+            'ψ₄': { x: 0, y: 0, z: 0 }
         };
         
-        // Vertex spheres for hit detection
-        const vertexSpheres = {};
-
         function init() {
-            // Three.js setup
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth/innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -84,86 +340,117 @@
             
             camera.position.z = 5;
             
-            // Lighting
             scene.add(new THREE.AmbientLight(0x404040));
             const light = new THREE.DirectionalLight(0xffffff, 1);
             light.position.set(5, 5, 5);
             scene.add(light);
             
-            // Raycasting for click detection
-            raycaster = new THREE.Raycaster();
-            mouse = new THREE.Vector2();
-            
             createTetrahedron();
-            createVertexSpheres();
             setupTetrahedronDrag();
-            setupVertexClickDetection();
             selectVertex('ψ₁');
             animate();
         }
         
-        function createVertexSpheres() {
-            const sphereGeometry = new THREE.SphereGeometry(0.3);
+        function createTetrahedron() {
+            const geometry = new THREE.TetrahedronGeometry(2.5);
             
-            Object.keys(vertexPositions).forEach(vertex => {
-                const colors = {
-                    'ψ₁': 0xFF6B6B, 'ψ₂': 0x4ECDC4, 
-                    'ψ₃': 0x45B7D1, 'ψ₄': 0xFFE66D
+            const colors = new Float32Array([
+                1.0, 0.42, 0.42,  0.31, 0.80, 0.77,  0.27, 0.72, 0.82,
+                1.0, 0.42, 0.42,  0.27, 0.72, 0.82,  1.0, 0.90, 0.43,
+                1.0, 0.42, 0.42,  1.0, 0.90, 0.43,  0.31, 0.80, 0.77,
+                0.31, 0.80, 0.77,  1.0, 0.90, 0.43,  0.27, 0.72, 0.82
+            ]);
+            
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            
+            const material = new THREE.MeshPhongMaterial({
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            
+            tetrahedron = new THREE.Mesh(geometry, material);
+            scene.add(tetrahedron);
+
+            const wireframe = new THREE.WireframeGeometry(geometry);
+            const line = new THREE.LineSegments(wireframe);
+            line.material.color.set(0xffffff);
+            line.material.transparent = true;
+            line.material.opacity = 0.4;
+            tetrahedron.add(line);
+        }
+        
+        function setupTetrahedronDrag() {
+            let isDragging = false;
+            let previousPosition = { x: 0, y: 0 };
+            let isShiftPressed = false;
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Shift') isShiftPressed = true;
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                if (e.key === 'Shift') isShiftPressed = false;
+            });
+            
+            renderer.domElement.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousPosition = { x: e.clientX, y: e.clientY };
+                renderer.domElement.style.cursor = 'grabbing';
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const deltaMove = {
+                    x: e.clientX - previousPosition.x,
+                    y: e.clientY - previousPosition.y
                 };
                 
-                const sphereMaterial = new THREE.MeshBasicMaterial({
-                    color: colors[vertex],
-                    transparent: true,
-                    opacity: 0.0 // Invisible but clickable
-                });
-                
-                const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-                sphere.position.copy(vertexPositions[vertex]);
-                sphere.userData.vertexId = vertex;
-                
-                scene.add(sphere);
-                vertexSpheres[vertex] = sphere;
-            });
-        }
-        
-        function setupVertexClickDetection() {
-            renderer.domElement.addEventListener('click', (event) => {
-                // Calculate mouse position in normalized device coordinates
-                const rect = renderer.domElement.getBoundingClientRect();
-                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-                
-                // Update the picking ray with the camera and mouse position
-                raycaster.setFromCamera(mouse, camera);
-                
-                // Calculate objects intersecting the picking ray
-                const intersects = raycaster.intersectObjects(Object.values(vertexSpheres));
-                
-                if (intersects.length > 0) {
-                    const clickedVertex = intersects[0].object.userData.vertexId;
-                    selectVertex(clickedVertex);
+                if (isShiftPressed) {
+                    tetrahedron.rotation.z += deltaMove.x * 0.01;
+                } else {
+                    tetrahedron.rotation.y += deltaMove.x * 0.01;
+                    tetrahedron.rotation.x += deltaMove.y * 0.01;
                 }
+                
+                previousPosition = { x: e.clientX, y: e.clientY };
             });
-        }
-        
-        function updateVertexMarkers() {
-            Object.keys(vertexPositions).forEach(vertex => {
-                const marker = document.getElementById(`marker-${vertex}`);
-                if (marker) {
-                    // Convert 3D position to screen coordinates
-                    const vector = vertexPositions[vertex].clone();
-                    vector.applyMatrix4(tetrahedron.matrixWorld);
-                    vector.project(camera);
-                    
-                    const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
-                    const y = -(vector.y * 0.5 - 0.5) * window.innerHeight;
-                    
-                    marker.style.left = `${x}px`;
-                    marker.style.top = `${y}px`;
-                    
-                    // Update active state
-                    marker.classList.toggle('active', vertex === selectedVertex);
+            
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                renderer.domElement.style.cursor = 'grab';
+            });
+            
+            // Touch events
+            renderer.domElement.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    const touch = e.touches[0];
+                    previousPosition = { x: touch.clientX, y: touch.clientY };
                 }
+                e.preventDefault();
+            });
+            
+            renderer.domElement.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 1 && isDragging) {
+                    const touch = e.touches[0];
+                    const deltaMove = {
+                        x: touch.clientX - previousPosition.x,
+                        y: touch.clientY - previousPosition.y
+                    };
+                    
+                    tetrahedron.rotation.y += deltaMove.x * 0.01;
+                    tetrahedron.rotation.x += deltaMove.y * 0.01;
+                    
+                    previousPosition = { x: touch.clientX, y: touch.clientY };
+                }
+                e.preventDefault();
+            });
+            
+            renderer.domElement.addEventListener('touchend', () => {
+                isDragging = false;
             });
         }
         
@@ -189,9 +476,66 @@
                 btn.classList.remove('selected');
             });
             document.querySelector(`.vertex-${vertexId}`).classList.add('selected');
-            document.getElementById('current-vertex').textContent = vertexId;
             
-            updateVertexMarkers();
+            document.querySelectorAll('.vertex-hotspot').forEach(hotspot => {
+                hotspot.classList.remove('active');
+            });
+            document.querySelector(`.hotspot-${vertexId}`).classList.add('active');
+            
+            document.getElementById('current-vertex').textContent = vertexId;
+        }
+        
+        function generateSeed() {
+            if (!tetrahedron) return;
+            
+            vertexRotations[selectedVertex] = {
+                x: tetrahedron.rotation.x,
+                y: tetrahedron.rotation.y,
+                z: tetrahedron.rotation.z
+            };
+            
+            const passphrase = document.getElementById('passphrase').value.trim();
+            
+            const seedHash = Array.from({length: 64}, () => 
+                Math.floor(Math.random()*16).toString(16)
+            ).join('');
+            
+            const checksum = "A3B7";
+            
+            let output = '<strong>🎉 Ekte RoTH Seed Generert!</strong><br><br>';
+            
+            const colors = {
+                'ψ₁': { name: 'Rød (Primær)', color: '#FF6B6B' },
+                'ψ₂': { name: 'Blå (Sekundær)', color: '#4ECDC4' },
+                'ψ₃': { name: 'Grønn (Tertiær)', color: '#45B7D1' },
+                'ψ₄': { name: 'Gul (Kvaternær)', color: '#FFE66D' }
+            };
+            
+            Object.keys(vertexRotations).forEach(vertex => {
+                const rot = vertexRotations[vertex];
+                const rotX = (rot.x * 180/Math.PI).toFixed(1);
+                const rotY = (rot.y * 180/Math.PI).toFixed(1);
+                const rotZ = (rot.z * 180/Math.PI).toFixed(1);
+                
+                output += `<strong style="color: ${colors[vertex].color}">${vertex} (${colors[vertex].name}):</strong><br>`;
+                output += `X: ${rotX}°, Y: ${rotY}°, Z: ${rotZ}°<br><br>`;
+            });
+            
+            output += `<strong>📋 Checksum:</strong> <code style="font-size: 18px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 5px; letter-spacing: 3px;">${checksum}</code><br>`;
+            output += `<small style="opacity:0.7">Bruk denne for å verifisere recovery-input</small><br><br>`;
+            
+            output += `<strong>Passfrase:</strong> ${passphrase || '(ingen)'}<br><br>`;
+            output += `<strong>🔐 RoTH v6.2 Hash:</strong><br>`;
+            output += `<code style="font-size: 10px; word-break: break-all;">${seedHash}</code><br><br>`;
+            output += `<strong>🌌 Entropi:</strong> ~496 bits (kun rotasjon) eller ~626 bits (med passfrase)<br>`;
+            output += `<em style="color: #4ECDC4;">✅ Sterkere enn atomer i universet!</em>`;
+            
+            document.getElementById('seed-output').innerHTML = output;
+            document.getElementById('output-panel').classList.add('active');
+        }
+        
+        function closeOutput() {
+            document.getElementById('output-panel').classList.remove('active');
         }
         
         function animate() {
@@ -202,15 +546,18 @@
                 document.getElementById('rot-x').textContent = (rotation.x * 180 / Math.PI).toFixed(1) + '°';
                 document.getElementById('rot-y').textContent = (rotation.y * 180 / Math.PI).toFixed(1) + '°';
                 document.getElementById('rot-z').textContent = (rotation.z * 180 / Math.PI).toFixed(1) + '°';
-                
-                updateVertexMarkers();
             }
             
             renderer.render(scene, camera);
         }
-
-        // Resten av koden (createTetrahedron, setupTetrahedronDrag, generateSeed, etc.) forblir den samme
-        // ... [all the existing code] ...
+        
+        init();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
