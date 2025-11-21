@@ -3,6 +3,7 @@
 <head>
     <title>RoTH Tetraeder Seed Ceremony</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #1a1a2e; }
         #ui { 
@@ -43,6 +44,7 @@
         </div>
         
         <div id="coordinates">
+            <div>📍 <strong>Posisjon:</strong> <span id="pos-x">0.0</span>, <span id="pos-y">0.0</span>, <span id="pos-z">0.0</span></div>
             <div>🔄 <strong>Rotasjon:</strong> <span id="rot-x">0.0°</span>, <span id="rot-y">0.0°</span>, <span id="rot-z">0.0°</span></div>
             <div>🎯 <strong>Hjørne:</strong> <span id="current-vertex">ψ₁</span></div>
         </div>
@@ -56,7 +58,7 @@
     </div>
 
     <script>
-        let scene, camera, renderer, tetrahedron;
+        let scene, camera, renderer, controls, tetrahedron;
         let selectedVertex = 'ψ₁';
         let vertexSpheres = [];
         
@@ -68,6 +70,9 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.getElementById('container').appendChild(renderer.domElement);
             
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
             camera.position.z = 5;
             
             // Lighting
@@ -77,22 +82,25 @@
             scene.add(light);
             
             createTetrahedron();
-            setupTetrahedronMovement();
             animate();
+            updateCoordinates();
             selectVertex('ψ₁');
         }
         
         function createTetrahedron() {
+            // Tetrahedron geometry
             const geometry = new THREE.TetrahedronGeometry(2);
             const material = new THREE.MeshPhongMaterial({
                 color: 0x444444, 
                 transparent: true, 
-                opacity: 0.3
+                opacity: 0.3,
+                wireframe: false
             });
             
             tetrahedron = new THREE.Mesh(geometry, material);
             scene.add(tetrahedron);
             
+            // Create vertex spheres INSIde the tetrahedron
             const sphereGeometry = new THREE.SphereGeometry(0.2, 16, 16);
             const vertices = [
                 { pos: [1.3, 1.3, 1.3], color: 0xFF6B6B, id: 'ψ₁' },
@@ -111,50 +119,24 @@
                 const sphere = new THREE.Mesh(sphereGeometry, material);
                 sphere.position.set(...vertex.pos);
                 sphere.userData = { id: vertex.id };
+                
+                // Add sphere to tetrahedron (not scene) so it moves with tetrahedron
                 tetrahedron.add(sphere);
                 vertexSpheres.push(sphere);
             });
         }
         
-        function setupTetrahedronMovement() {
-            let isDragging = false;
-            let previousMousePosition = { x: 0, y: 0 };
-            
-            renderer.domElement.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                previousMousePosition = { x: e.clientX, y: e.clientY };
-            });
-            
-            renderer.domElement.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                
-                const deltaMove = {
-                    x: e.clientX - previousMousePosition.x,
-                    y: e.clientY - previousMousePosition.y
-                };
-                
-                tetrahedron.rotation.y += deltaMove.x * 0.01;
-                tetrahedron.rotation.x += deltaMove.y * 0.01;
-                
-                previousMousePosition = { x: e.clientX, y: e.clientY };
-            });
-            
-            renderer.domElement.addEventListener('mouseup', () => {
-                isDragging = false;
-            });
-            
-            renderer.domElement.addEventListener('mouseleave', () => {
-                isDragging = false;
-            });
-        }
-        
         function selectVertex(vertexId) {
             selectedVertex = vertexId;
+            
+            // Update UI
             document.querySelectorAll('.vertex').forEach(el => {
                 el.classList.toggle('selected', el.textContent.includes(vertexId));
             });
+            
             document.getElementById('current-vertex').textContent = vertexId;
             
+            // Visual feedback
             vertexSpheres.forEach(sphere => {
                 const isSelected = sphere.userData.id === vertexId;
                 sphere.material.emissiveIntensity = isSelected ? 0.8 : 0.3;
@@ -162,18 +144,16 @@
             });
         }
         
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            // Oppdater koordinater hver frame
+        function updateCoordinates() {
             if (tetrahedron) {
                 const rotation = tetrahedron.rotation;
+                
                 document.getElementById('rot-x').textContent = (rotation.x * 180 / Math.PI).toFixed(1) + '°';
                 document.getElementById('rot-y').textContent = (rotation.y * 180 / Math.PI).toFixed(1) + '°';
                 document.getElementById('rot-z').textContent = (rotation.z * 180 / Math.PI).toFixed(1) + '°';
             }
             
-            renderer.render(scene, camera);
+            requestAnimationFrame(updateCoordinates);
         }
         
         function generateSeed() {
@@ -187,8 +167,14 @@
                 Rotasjon: ${(rotation.x * 180/Math.PI).toFixed(1)}°, ${(rotation.y * 180/Math.PI).toFixed(1)}°, ${(rotation.z * 180/Math.PI).toFixed(1)}°<br>
                 Hjørne: ${selectedVertex}<br>
                 Passfrase: ${passphrase || 'Ingen'}<br>
-                <em style="color: #4ECDC4;">✅ Koordinater fungerer nå!</em>
+                <em style="color: #4ECDC4;">✅ Tetraeder vises og rotasjon fungerer!</em>
             `;
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
         }
         
         // Start app
