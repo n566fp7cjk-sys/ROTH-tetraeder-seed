@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RoTH Tetraeder Seed Ceremony</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        /* Alt CSS fra før pluss: */
+        
+        .vertex-marker {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid;
+            background: rgba(255,255,255,0.2);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+        
+        .vertex-marker.active {
+            width: 25px;
+            height: 25px;
+            box-shadow: 0 0 15px currentColor;
+        }
+        
+        .vertex-ψ₁-marker { border-color: #FF6B6B; color: #FF6B6B; }
+        .vertex-ψ₂-marker { border-color: #4ECDC4; color: #4ECDC4; }
+        .vertex-ψ₃-marker { border-color: #45B7D1; color: #45B7D1; }
+        .vertex-ψ₄-marker { border-color: #FFE66D; color: #FFE66D; }
+    </style>
+</head>
+<body>
+    <!-- HEADER (samme som før) -->
+    <div class="header">
+        <div class="header-title">
+            <h1>🔺 RoTH Seed Ceremony</h1>
+            <div class="subtitle">Klikk på hjørner • Rotér tetraederet</div>
+        </div>
+        
+        <div class="vertex-selector">
+            <button class="vertex-btn vertex-ψ₁ selected" onclick="selectVertex('ψ₁')">ψ₁</button>
+            <button class="vertex-btn vertex-ψ₂" onclick="selectVertex('ψ₂')">ψ₂</button>
+            <button class="vertex-btn vertex-ψ₃" onclick="selectVertex('ψ₃')">ψ₃</button>
+            <button class="vertex-btn vertex-ψ₄" onclick="selectVertex('ψ₄')">ψ₄</button>
+        </div>
+    </div>
+    
+    <!-- MAIN TETRAHEDRON -->
+    <div id="container"></div>
+    
+    <!-- VERTEX MARKERS -->
+    <div class="vertex-marker vertex-ψ₁-marker active" id="marker-ψ₁"></div>
+    <div class="vertex-marker vertex-ψ₂-marker" id="marker-ψ₂"></div>
+    <div class="vertex-marker vertex-ψ₃-marker" id="marker-ψ₃"></div>
+    <div class="vertex-marker vertex-ψ₄-marker" id="marker-ψ₄"></div>
+    
+    <!-- ROTATION DISPLAY og CONTROL PANEL (samme som før) -->
+
+    <script>
+        let scene, camera, renderer, tetrahedron;
+        let selectedVertex = 'ψ₁';
+        let raycaster, mouse;
+        
+        // Vertex positions in 3D space
+        const vertexPositions = {
+            'ψ₁': new THREE.Vector3(2.5, 2.5, 2.5),   // Top-right-front
+            'ψ₂': new THREE.Vector3(-2.5, -2.5, 2.5), // Bottom-left-front  
+            'ψ₃': new THREE.Vector3(-2.5, 2.5, -2.5), // Top-right-back
+            'ψ₄': new THREE.Vector3(2.5, -2.5, -2.5)  // Bottom-left-back
+        };
+        
+        // Vertex spheres for hit detection
+        const vertexSpheres = {};
+
+        function init() {
+            // Three.js setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            camera.position.z = 5;
+            
+            // Lighting
+            scene.add(new THREE.AmbientLight(0x404040));
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 5, 5);
+            scene.add(light);
+            
+            // Raycasting for click detection
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+            
+            createTetrahedron();
+            createVertexSpheres();
+            setupTetrahedronDrag();
+            setupVertexClickDetection();
+            selectVertex('ψ₁');
+            animate();
+        }
+        
+        function createVertexSpheres() {
+            const sphereGeometry = new THREE.SphereGeometry(0.3);
+            
+            Object.keys(vertexPositions).forEach(vertex => {
+                const colors = {
+                    'ψ₁': 0xFF6B6B, 'ψ₂': 0x4ECDC4, 
+                    'ψ₃': 0x45B7D1, 'ψ₄': 0xFFE66D
+                };
+                
+                const sphereMaterial = new THREE.MeshBasicMaterial({
+                    color: colors[vertex],
+                    transparent: true,
+                    opacity: 0.0 // Invisible but clickable
+                });
+                
+                const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                sphere.position.copy(vertexPositions[vertex]);
+                sphere.userData.vertexId = vertex;
+                
+                scene.add(sphere);
+                vertexSpheres[vertex] = sphere;
+            });
+        }
+        
+        function setupVertexClickDetection() {
+            renderer.domElement.addEventListener('click', (event) => {
+                // Calculate mouse position in normalized device coordinates
+                const rect = renderer.domElement.getBoundingClientRect();
+                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                
+                // Update the picking ray with the camera and mouse position
+                raycaster.setFromCamera(mouse, camera);
+                
+                // Calculate objects intersecting the picking ray
+                const intersects = raycaster.intersectObjects(Object.values(vertexSpheres));
+                
+                if (intersects.length > 0) {
+                    const clickedVertex = intersects[0].object.userData.vertexId;
+                    selectVertex(clickedVertex);
+                }
+            });
+        }
+        
+        function updateVertexMarkers() {
+            Object.keys(vertexPositions).forEach(vertex => {
+                const marker = document.getElementById(`marker-${vertex}`);
+                if (marker) {
+                    // Convert 3D position to screen coordinates
+                    const vector = vertexPositions[vertex].clone();
+                    vector.applyMatrix4(tetrahedron.matrixWorld);
+                    vector.project(camera);
+                    
+                    const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                    const y = -(vector.y * 0.5 - 0.5) * window.innerHeight;
+                    
+                    marker.style.left = `${x}px`;
+                    marker.style.top = `${y}px`;
+                    
+                    // Update active state
+                    marker.classList.toggle('active', vertex === selectedVertex);
+                }
+            });
+        }
+        
+        function selectVertex(vertexId) {
+            if (tetrahedron) {
+                vertexRotations[selectedVertex] = {
+                    x: tetrahedron.rotation.x,
+                    y: tetrahedron.rotation.y,
+                    z: tetrahedron.rotation.z
+                };
+            }
+            
+            selectedVertex = vertexId;
+            
+            if (tetrahedron) {
+                tetrahedron.rotation.x = vertexRotations[vertexId].x;
+                tetrahedron.rotation.y = vertexRotations[vertexId].y;
+                tetrahedron.rotation.z = vertexRotations[vertexId].z;
+            }
+            
+            // Update UI
+            document.querySelectorAll('.vertex-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            document.querySelector(`.vertex-${vertexId}`).classList.add('selected');
+            document.getElementById('current-vertex').textContent = vertexId;
+            
+            updateVertexMarkers();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (tetrahedron) {
+                const rotation = tetrahedron.rotation;
+                document.getElementById('rot-x').textContent = (rotation.x * 180 / Math.PI).toFixed(1) + '°';
+                document.getElementById('rot-y').textContent = (rotation.y * 180 / Math.PI).toFixed(1) + '°';
+                document.getElementById('rot-z').textContent = (rotation.z * 180 / Math.PI).toFixed(1) + '°';
+                
+                updateVertexMarkers();
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        // Resten av koden (createTetrahedron, setupTetrahedronDrag, generateSeed, etc.) forblir den samme
+        // ... [all the existing code] ...
+    </script>
+</body>
+</html>
