@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RoTH Tetraeder Seed Ceremony</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #1a1a2e; }
+        #ui { 
+            position: absolute; top: 20px; left: 20px; 
+            background: rgba(0,0,0,0.9); color: white; padding: 25px; 
+            border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);
+            max-width: 350px;
+        }
+        .vertex { 
+            padding: 10px; margin: 8px 0; border-radius: 8px; 
+            cursor: pointer; transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        .vertex:hover { background: rgba(255,255,255,0.1); transform: translateX(5px); }
+        .vertex.selected { background: rgba(255,255,255,0.15); border-color: currentColor; font-weight: bold; }
+        .vertex-ψ₁ { color: #FF6B6B; }
+        .vertex-ψ₂ { color: #4ECDC4; }
+        .vertex-ψ₃ { color: #45B7D1; }
+        .vertex-ψ₄ { color: #FFE66D; }
+        #coordinates { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin: 15px 0; font-family: monospace; }
+        #passphrase { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; }
+        button { width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+        button:hover { background: #764ba2; }
+        #seed-output { margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.5); border-radius: 8px; word-break: break-all; font-family: monospace; font-size: 11px; }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="ui">
+        <h2>🔺 RoTH Seed Ceremony</h2>
+        
+        <div style="margin-bottom: 20px;">
+            <strong>Velg ditt hjørne:</strong>
+            <div class="vertex vertex-ψ₁" onclick="selectVertex('ψ₁')">ψ₁: Rød (Primær)</div>
+            <div class="vertex vertex-ψ₂" onclick="selectVertex('ψ₂')">ψ₂: Blå (Sekundær)</div>
+            <div class="vertex vertex-ψ₃" onclick="selectVertex('ψ₃')">ψ₃: Grønn (Tertiær)</div>
+            <div class="vertex vertex-ψ₄" onclick="selectVertex('ψ₄')">ψ₄: Gul (Kvaternær)</div>
+        </div>
+        
+        <div id="coordinates">
+            <div>📍 <strong>Posisjon:</strong> <span id="pos-x">0.0</span>, <span id="pos-y">0.0</span>, <span id="pos-z">0.0</span></div>
+            <div>🔄 <strong>Rotasjon:</strong> <span id="rot-x">0.0°</span>, <span id="rot-y">0.0°</span>, <span id="rot-z">0.0°</span></div>
+            <div>🎯 <strong>Hjørne:</strong> <span id="current-vertex">ψ₁</span></div>
+        </div>
+        
+        <input type="text" id="passphrase" placeholder="Skriv din passfrase her...">
+        <button onclick="generateSeed()">🎲 Generer Seed</button>
+        
+        <div id="seed-output">
+            <!-- Seed vil vises her -->
+        </div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, controls, tetrahedron;
+        let selectedVertex = 'ψ₁';
+        let vertexSpheres = [];
+        
+        function init() {
+            // Three.js setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            camera.position.z = 8;
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(10, 10, 5);
+            scene.add(directionalLight);
+            
+            createTetrahedron();
+            animate();
+            updateCoordinates();
+            selectVertex('ψ₁');
+        }
+        
+        function createTetrahedron() {
+            // Tetrahedron
+            const geometry = new THREE.TetrahedronGeometry(2.5);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0x444444, transparent: true, opacity: 0.2
+            });
+            tetrahedron = new THREE.Mesh(geometry, material);
+            scene.add(tetrahedron);
+            
+            // Vertex spheres
+            const sphereGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+            const vertices = [
+                { pos: [2.5, 2.5, 2.5], color: 0xFF6B6B, id: 'ψ₁' },
+                { pos: [2.5, -2.5, -2.5], color: 0x4ECDC4, id: 'ψ₂' },
+                { pos: [-2.5, 2.5, -2.5], color: 0x45B7D1, id: 'ψ₃' },
+                { pos: [-2.5, -2.5, 2.5], color: 0xFFE66D, id: 'ψ₄' }
+            ];
+            
+            vertices.forEach(vertex => {
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: vertex.color, emissive: vertex.color, emissiveIntensity: 0.3
+                });
+                const sphere = new THREE.Mesh(sphereGeometry, material);
+                sphere.position.set(...vertex.pos);
+                sphere.userData = { id: vertex.id };
+                vertexSpheres.push(sphere);
+                scene.add(sphere);
+            });
+            
+            // Wireframe
+            const wireframe = new THREE.WireframeGeometry(geometry);
+            const line = new THREE.LineSegments(wireframe);
+            line.material.color.set(0x888888);
+            line.material.transparent = true;
+            line.material.opacity = 0.3;
+            tetrahedron.add(line);
+        }
+        
+        function selectVertex(vertexId) {
+            selectedVertex = vertexId;
+            
+            // Update UI
+            document.querySelectorAll('.vertex').forEach(el => {
+                el.classList.toggle('selected', el.textContent.includes(vertexId));
+            });
+            document.getElementById('current-vertex').textContent = vertexId;
+            
+            // Visual feedback
+            vertexSpheres.forEach(sphere => {
+                const isSelected = sphere.userData.id === vertexId;
+                sphere.material.emissiveIntensity = isSelected ? 0.8 : 0.3;
+                sphere.scale.setScalar(isSelected ? 1.4 : 1.0);
+            });
+        }
+        
+        function updateCoordinates() {
+            const position = controls.target;
+            const rotation = tetrahedron.rotation;
+            
+            document.getElementById('pos-x').textContent = position.x.toFixed(2);
+            document.getElementById('pos-y').textContent = position.y.toFixed(2);
+            document.getElementById('pos-z').textContent = position.z.toFixed(2);
+            
+            document.getElementById('rot-x').textContent = (rotation.x * 180 / Math.PI).toFixed(1) + '°';
+            document.getElementById('rot-y').textContent = (rotation.y * 180 / Math.PI).toFixed(1) + '°';
+            document.getElementById('rot-z').textContent = (rotation.z * 180 / Math.PI).toFixed(1) + '°';
+            
+            requestAnimationFrame(updateCoordinates);
+        }
+        
+        function generateSeed() {
+            const passphrase = document.getElementById('passphrase').value.trim();
+            const position = controls.target;
+            const rotation = tetrahedron.rotation;
+            
+            if (!passphrase) {
+                document.getElementById('seed-output').innerHTML = '⚠️ Vennligst skriv inn en passfrase';
+                return;
+            }
+            
+            // Simulert RoTH hash (erstatt med ekte senere)
+            const fakeHash = Array.from({length: 64}, () => 
+                Math.floor(Math.random()*16).toString(16)
+            ).join('');
+            
+            const inputData = {
+                position: [position.x, position.y, position.z],
+                rotation: [rotation.x, rotation.y, rotation.z],
+                vertex: selectedVertex,
+                passphrase: passphrase
+            };
+            
+            document.getElementById('seed-output').innerHTML = `
+                <div style="margin-bottom: 10px;"><strong>🎉 Seed Generert!</strong></div>
+                <div style="font-size: 10px; opacity: 0.8; margin-bottom: 10px;">
+                    Posisjon: ${inputData.position.map(p => p.toFixed(2)).join(', ')}<br>
+                    Rotasjon: ${inputData.rotation.map(r => (r * 180/Math.PI).toFixed(1) + '°').join(', ')}<br>
+                    Hjørne: ${inputData.vertex}<br>
+                    Passfrase: ${inputData.passphrase}
+                </div>
+                <strong>Test Seed (Hex):</strong><br>
+                <code style="font-size: 9px;">${fakeHash}</code><br><br>
+                <em>💡 Dette er en test-versjon. Ekte RoTH hash kommer senere.</em>
+            `;
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        // Start app
+        init();
+    </script>
+</body>
+</html>
