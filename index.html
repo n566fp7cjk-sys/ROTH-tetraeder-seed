@@ -284,38 +284,31 @@ function init() {
         }
         
 function updateCoordinates() {
-    // Hent rotasjon direkte fra tetraederet
     const rotation = tetrahedron.rotation;
     
-    // For posisjon, bruk en beregnet verdi basert på kamera-posisjon
-    // eller vis bare rotasjon som er det viktigste
-    const cameraPosition = camera.position;
-    const targetPosition = controls.target;
-    
-    document.getElementById('pos-x').textContent = targetPosition.x.toFixed(2);
-    document.getElementById('pos-y').textContent = targetPosition.y.toFixed(2);
-    document.getElementById('pos-z').textContent = targetPosition.z.toFixed(2);
-    
+    // Vis bare rotasjon - det er det viktigste for seed-generering
     document.getElementById('rot-x').textContent = (rotation.x * 180 / Math.PI).toFixed(1) + '°';
     document.getElementById('rot-y').textContent = (rotation.y * 180 / Math.PI).toFixed(1) + '°';
     document.getElementById('rot-z').textContent = (rotation.z * 180 / Math.PI).toFixed(1) + '°';
+    
+    // Vis at posisjon er fast (siden OrbitControls ikke flytter tetraederet)
+    document.getElementById('pos-x').textContent = '0.00';
+    document.getElementById('pos-y').textContent = '0.00';
+    document.getElementById('pos-z').textContent = '0.00';
     
     requestAnimationFrame(updateCoordinates);
 }
 
 function generateSeed() {
     const rotation = tetrahedron.rotation;
-    const targetPosition = controls.target;
     
     document.getElementById('seed-output').innerHTML = `
         <strong>Test Data:</strong><br>
-        Posisjon: ${targetPosition.x.toFixed(2)}, ${targetPosition.y.toFixed(2)}, ${targetPosition.z.toFixed(2)}<br>
         Rotasjon: ${(rotation.x * 180/Math.PI).toFixed(1)}°, ${(rotation.y * 180/Math.PI).toFixed(1)}°, ${(rotation.z * 180/Math.PI).toFixed(1)}°<br>
         Hjørne: ${selectedVertex}<br>
-        <em>Hash kommer senere...</em>
+        <em>Rotasjonen er det viktigste for seed-generering!</em>
     `;
-}
-    
+}    
     // Show loading
     btn.innerHTML = '⏳ Genererer...';
     btn.classList.add('loading');
