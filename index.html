@@ -283,13 +283,18 @@ function init() {
             });
         }
         
-   function updateCoordinates() {
-    const position = tetrahedron.position;
+function updateCoordinates() {
+    // Hent rotasjon direkte fra tetraederet
     const rotation = tetrahedron.rotation;
     
-    document.getElementById('pos-x').textContent = position.x.toFixed(2);
-    document.getElementById('pos-y').textContent = position.y.toFixed(2);
-    document.getElementById('pos-z').textContent = position.z.toFixed(2);
+    // For posisjon, bruk en beregnet verdi basert på kamera-posisjon
+    // eller vis bare rotasjon som er det viktigste
+    const cameraPosition = camera.position;
+    const targetPosition = controls.target;
+    
+    document.getElementById('pos-x').textContent = targetPosition.x.toFixed(2);
+    document.getElementById('pos-y').textContent = targetPosition.y.toFixed(2);
+    document.getElementById('pos-z').textContent = targetPosition.z.toFixed(2);
     
     document.getElementById('rot-x').textContent = (rotation.x * 180 / Math.PI).toFixed(1) + '°';
     document.getElementById('rot-y').textContent = (rotation.y * 180 / Math.PI).toFixed(1) + '°';
@@ -299,16 +304,17 @@ function init() {
 }
 
 function generateSeed() {
-    const passphrase = document.getElementById('passphrase').value.trim();
-    // Bruk tetraederets FAKTISKE posisjon og rotasjon
-    const position = tetrahedron.position;
     const rotation = tetrahedron.rotation;
-    const btn = document.getElementById('generate-btn');
+    const targetPosition = controls.target;
     
-    if (!passphrase) {
-        document.getElementById('seed-output').innerHTML = '⚠️ Vennligst skriv inn en passfrase';
-        return;
-    }
+    document.getElementById('seed-output').innerHTML = `
+        <strong>Test Data:</strong><br>
+        Posisjon: ${targetPosition.x.toFixed(2)}, ${targetPosition.y.toFixed(2)}, ${targetPosition.z.toFixed(2)}<br>
+        Rotasjon: ${(rotation.x * 180/Math.PI).toFixed(1)}°, ${(rotation.y * 180/Math.PI).toFixed(1)}°, ${(rotation.z * 180/Math.PI).toFixed(1)}°<br>
+        Hjørne: ${selectedVertex}<br>
+        <em>Hash kommer senere...</em>
+    `;
+}
     
     // Show loading
     btn.innerHTML = '⏳ Genererer...';
