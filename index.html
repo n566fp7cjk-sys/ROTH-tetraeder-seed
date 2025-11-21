@@ -4,7 +4,6 @@
 <head>
     <title>RoTH Tetraeder Seed Ceremony</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #1a1a2e; }
         #ui { 
@@ -12,6 +11,8 @@
             background: rgba(0,0,0,0.9); color: white; padding: 25px; 
             border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);
             max-width: 350px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .vertex { 
             padding: 10px; margin: 8px 0; border-radius: 8px; 
@@ -26,8 +27,17 @@
         .vertex-ψ₄ { color: #FFE66D; }
         #coordinates { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin: 15px 0; font-family: monospace; }
         #passphrase { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; }
-        button { width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+        button { width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 5px; }
         button:hover { background: #764ba2; }
+        button.secondary { background: #555; }
+        button.secondary:hover { background: #666; }
+        .mode-toggle { display: flex; gap: 5px; margin-bottom: 15px; }
+        .mode-toggle button { flex: 1; padding: 8px; font-size: 14px; }
+        .mode-toggle button.active { background: #667eea; }
+        .angle-input { width: 100%; padding: 8px; margin: 5px 0; border: none; border-radius: 5px; background: rgba(255,255,255,0.1); color: white; font-family: monospace; }
+        .recovery-inputs { display: none; }
+        .recovery-inputs.active { display: block; }
+        .angle-group { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin: 10px 0; }
         #seed-output { margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.5); border-radius: 8px; word-break: break-all; font-family: monospace; font-size: 11px; }
     </style>
 </head>
@@ -37,24 +47,70 @@
         <h2>🔺 RoTH Seed Ceremony</h2>
 
 ```
-    <div style="margin-bottom: 20px;">
-        <strong>Velg ditt hjørne:</strong>
-        <div class="vertex vertex-ψ₁" onclick="selectVertex('ψ₁')">ψ₁: Rød (Primær)</div>
-        <div class="vertex vertex-ψ₂" onclick="selectVertex('ψ₂')">ψ₂: Blå (Sekundær)</div>
-        <div class="vertex vertex-ψ₃" onclick="selectVertex('ψ₃')">ψ₃: Grønn (Tertiær)</div>
-        <div class="vertex vertex-ψ₄" onclick="selectVertex('ψ₄')">ψ₄: Gul (Kvaternær)</div>
+    <div class="mode-toggle">
+        <button id="btn-ceremony" class="active" onclick="switchMode('ceremony')">🎨 Ceremony</button>
+        <button id="btn-recovery" onclick="switchMode('recovery')">🔢 Recovery</button>
     </div>
     
-    <div style="background: rgba(100,100,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px;">
-        💡 <strong>Tips:</strong><br>
-        • En finger: Roter X/Y<br>
-        • To fingre: Vri Z-akse<br>
-        • Velg hver farge og roter den!
+    <!-- CEREMONY MODE -->
+    <div id="ceremony-mode">
+        <div style="margin-bottom: 20px;">
+            <strong>Velg ditt hjørne:</strong>
+            <div class="vertex vertex-ψ₁" onclick="selectVertex('ψ₁')">ψ₁: Rød (Primær)</div>
+            <div class="vertex vertex-ψ₂" onclick="selectVertex('ψ₂')">ψ₂: Blå (Sekundær)</div>
+            <div class="vertex vertex-ψ₃" onclick="selectVertex('ψ₃')">ψ₃: Grønn (Tertiær)</div>
+            <div class="vertex vertex-ψ₄" onclick="selectVertex('ψ₄')">ψ₄: Gul (Kvaternær)</div>
+        </div>
+        
+        <div style="background: rgba(100,100,255,0.1); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px;">
+            💡 <strong>Tips:</strong><br>
+            • En finger: Roter X/Y<br>
+            • To fingre: Vri Z-akse<br>
+            • Velg hver farge og roter den!
+        </div>
+        
+        <div id="coordinates">
+            <div>🔄 <strong>Rotasjon:</strong> <span id="rot-x">0.0°</span>, <span id="rot-y">0.0°</span>, <span id="rot-z">0.0°</span></div>
+            <div>🎯 <strong>Hjørne:</strong> <span id="current-vertex">ψ₁</span></div>
+        </div>
     </div>
     
-    <div id="coordinates">
-        <div>🔄 <strong>Rotasjon:</strong> <span id="rot-x">0.0°</span>, <span id="rot-y">0.0°</span>, <span id="rot-z">0.0°</span></div>
-        <div>🎯 <strong>Hjørne:</strong> <span id="current-vertex">ψ₁</span></div>
+    <!-- RECOVERY MODE -->
+    <div id="recovery-mode" class="recovery-inputs">
+        <div style="background: rgba(255,200,100,0.1); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px;">
+            ⚠️ <strong>Recovery Mode:</strong><br>
+            Tast inn eksakte vinkler hvis du har dem lagret.
+        </div>
+        
+        <div class="angle-group">
+            <strong style="color: #FF6B6B;">ψ₁ (Rød):</strong>
+            <input type="number" class="angle-input" id="input-ψ₁-x" placeholder="X° (0-360)" step="0.1">
+            <input type="number" class="angle-input" id="input-ψ₁-y" placeholder="Y° (0-360)" step="0.1">
+            <input type="number" class="angle-input" id="input-ψ₁-z" placeholder="Z° (0-360)" step="0.1">
+        </div>
+        
+        <div class="angle-group">
+            <strong style="color: #4ECDC4;">ψ₂ (Blå):</strong>
+            <input type="number" class="angle-input" id="input-ψ₂-x" placeholder="X° (0-360)" step="0.1">
+            <input type="number" class="angle-input" id="input-ψ₂-y" placeholder="Y° (0-360)" step="0.1">
+            <input type="number" class="angle-input" id="input-ψ₂-z" placeholder="Z° (0-360)" step="0.1">
+        </div>
+        
+        <div class="angle-group">
+            <strong style="color: #45B7D1;">ψ₃ (Grønn):</strong>
+            <input type="number" class="angle-input" id="input-ψ₃-x" placeholder="X° (0-360)" step="0.1">
+            <input type="number" class="angle-input" id="input-ψ₃-y" placeholder="Y° (0-360)" step="0.1">
+            <input type="number" class="angle-input" id="input-ψ₃-z" placeholder="Z° (0-360)" step="0.1">
+        </div>
+        
+        <div class="angle-group">
+            <strong style="color: #FFE66D;">ψ₄ (Gul):</strong>
+            <input type="number" class="angle-input" id="input-ψ₄-x" placeholder="X° (0-360)" step="0.1">
+            <input type="number" class="angle-input" id="input-ψ₄-y" placeholder="Y° (0-360)" step="0.1">
+            <input type="number" class="angle-input" id="input-ψ₄-z" placeholder="Z° (0-360)" step="0.1">
+        </div>
+        
+        <button class="secondary" onclick="applyRecoveryAngles()">📐 Bruk disse vinklene</button>
     </div>
     
     <input type="text" id="passphrase" placeholder="Skriv din passfrase her...">
@@ -68,7 +124,6 @@
 <script>
     let scene, camera, renderer, tetrahedron;
     let selectedVertex = 'ψ₁';
-    let vertexSpheres = [];
     
     // Lagre rotasjoner for hver farge
     let vertexRotations = {
@@ -79,7 +134,6 @@
     };
     
     function init() {
-        // Three.js setup
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -88,7 +142,6 @@
         
         camera.position.z = 5;
         
-        // Lighting
         scene.add(new THREE.AmbientLight(0x404040));
         const light = new THREE.DirectionalLight(0xffffff, 1);
         light.position.set(5, 5, 5);
@@ -100,12 +153,41 @@
         animate();
     }
     
+    function createTetrahedron() {
+        const geometry = new THREE.TetrahedronGeometry(2.5);
+        
+        const colors = new Float32Array([
+            1.0, 0.42, 0.42,  0.31, 0.80, 0.77,  0.27, 0.72, 0.82,
+            1.0, 0.42, 0.42,  0.27, 0.72, 0.82,  1.0, 0.90, 0.43,
+            1.0, 0.42, 0.42,  1.0, 0.90, 0.43,  0.31, 0.80, 0.77,
+            0.31, 0.80, 0.77,  1.0, 0.90, 0.43,  0.27, 0.72, 0.82
+        ]);
+        
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        
+        const material = new THREE.MeshPhongMaterial({
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            side: THREE.DoubleSide
+        });
+        
+        tetrahedron = new THREE.Mesh(geometry, material);
+        scene.add(tetrahedron);
+
+        const wireframe = new THREE.WireframeGeometry(geometry);
+        const line = new THREE.LineSegments(wireframe);
+        line.material.color.set(0xffffff);
+        line.material.transparent = true;
+        line.material.opacity = 0.4;
+        tetrahedron.add(line);
+    }
+    
     function setupTetrahedronDrag() {
         let isDragging = false;
         let previousPosition = { x: 0, y: 0 };
         let isShiftPressed = false;
         
-        // Track shift key for Z-rotation
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Shift') isShiftPressed = true;
         });
@@ -114,7 +196,6 @@
             if (e.key === 'Shift') isShiftPressed = false;
         });
         
-        // Mouse events
         renderer.domElement.addEventListener('mousedown', (e) => {
             isDragging = true;
             previousPosition = { x: e.clientX, y: e.clientY };
@@ -129,10 +210,8 @@
             };
             
             if (isShiftPressed) {
-                // Z-rotation when holding Shift
                 tetrahedron.rotation.z += deltaMove.x * 0.01;
             } else {
-                // Normal X and Y rotation
                 tetrahedron.rotation.y += deltaMove.x * 0.01;
                 tetrahedron.rotation.x += deltaMove.y * 0.01;
             }
@@ -144,18 +223,15 @@
             isDragging = false;
         });
         
-        // Touch events for iPad/mobile
         let initialTouchDistance = 0;
         let initialRotationZ = 0;
         
         renderer.domElement.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
-                // Single touch - normal rotation
                 isDragging = true;
                 const touch = e.touches[0];
                 previousPosition = { x: touch.clientX, y: touch.clientY };
             } else if (e.touches.length === 2) {
-                // Two finger touch - prepare for Z rotation
                 isDragging = false;
                 const touch1 = e.touches[0];
                 const touch2 = e.touches[1];
@@ -174,7 +250,6 @@
         
         renderer.domElement.addEventListener('touchmove', (e) => {
             if (e.touches.length === 1 && isDragging) {
-                // Single touch - normal X/Y rotation
                 const touch = e.touches[0];
                 const deltaMove = {
                     x: touch.clientX - previousPosition.x,
@@ -186,7 +261,6 @@
                 
                 previousPosition = { x: touch.clientX, y: touch.clientY };
             } else if (e.touches.length === 2) {
-                // Two finger twist - Z rotation
                 const touch1 = e.touches[0];
                 const touch2 = e.touches[1];
                 const angle = Math.atan2(
@@ -205,54 +279,7 @@
         });
     }
     
-    function createTetrahedron() {
-        // Tetrahedron
-        const geometry = new THREE.TetrahedronGeometry(2.5);
-        const material = new THREE.MeshPhongMaterial({
-            color: 0x444444, 
-            transparent: true, 
-            opacity: 0.2
-        });
-        tetrahedron = new THREE.Mesh(geometry, material);
-        scene.add(tetrahedron);
-
-        // Vertex spheres - VIKTIG: Legg kulene INNI tetraederet
-        const sphereGeometry = new THREE.SphereGeometry(0.25, 16, 16);
-        const vertices = [
-            { pos: [1.3, 1.3, 1.3], color: 0xFF6B6B, id: 'ψ₁' },
-            { pos: [1.3, -1.3, -1.3], color: 0x4ECDC4, id: 'ψ₂' },
-            { pos: [-1.3, 1.3, -1.3], color: 0x45B7D1, id: 'ψ₃' },
-            { pos: [-1.3, -1.3, 1.3], color: 0xFFE66D, id: 'ψ₄' }
-        ];
-
-        vertices.forEach(vertex => {
-            const material = new THREE.MeshPhongMaterial({ 
-                color: vertex.color, 
-                emissive: vertex.color, 
-                emissiveIntensity: 0.3
-            });
-            const sphere = new THREE.Mesh(sphereGeometry, material);
-            
-            // VIKTIG: Sett posisjon RELATIVT til tetraederet
-            sphere.position.set(vertex.pos[0], vertex.pos[1], vertex.pos[2]);
-            sphere.userData = { id: vertex.id };
-            
-            // Legg kulen INNI tetraeder-mesh, ikke i scenen direkte
-            tetrahedron.add(sphere);
-            vertexSpheres.push(sphere);
-        });
-
-        // Wireframe
-        const wireframe = new THREE.WireframeGeometry(geometry);
-        const line = new THREE.LineSegments(wireframe);
-        line.material.color.set(0x888888);
-        line.material.transparent = true;
-        line.material.opacity = 0.3;
-        tetrahedron.add(line);
-    }
-    
     function selectVertex(vertexId) {
-        // Lagre nåværende rotasjon før vi bytter
         if (tetrahedron) {
             vertexRotations[selectedVertex] = {
                 x: tetrahedron.rotation.x,
@@ -263,114 +290,130 @@
         
         selectedVertex = vertexId;
         
-        // Last inn lagret rotasjon for ny valgt vertex
         if (tetrahedron) {
             tetrahedron.rotation.x = vertexRotations[vertexId].x;
             tetrahedron.rotation.y = vertexRotations[vertexId].y;
             tetrahedron.rotation.z = vertexRotations[vertexId].z;
         }
         
-        // Update UI
         document.querySelectorAll('.vertex').forEach(el => {
             el.classList.toggle('selected', el.textContent.includes(vertexId));
         });
         
         document.getElementById('current-vertex').textContent = vertexId;
+    }
+    
+    function generateSeed() {
+        if (!tetrahedron) return;
         
-        // Visual feedback
-        vertexSpheres.forEach(sphere => {
-            const isSelected = sphere.userData.id === vertexId;
-            sphere.material.emissiveIntensity = isSelected ? 0.8 : 0.3;
-            sphere.scale.setScalar(isSelected ? 1.3 : 1.0);
+        vertexRotations[selectedVertex] = {
+            x: tetrahedron.rotation.x,
+            y: tetrahedron.rotation.y,
+            z: tetrahedron.rotation.z
+        };
+        
+        const passphrase = document.getElementById('passphrase').value.trim();
+        const hashInput = prepareHashInput(vertexRotations, passphrase);
+        
+        generateRoTHHash(hashInput).then(seedHash => {
+            let output = '<strong>🎉 Ekte RoTH Seed Generert!</strong><br><br>';
+            
+            const colors = {
+                'ψ₁': { name: 'Rød (Primær)', color: '#FF6B6B' },
+                'ψ₂': { name: 'Blå (Sekundær)', color: '#4ECDC4' },
+                'ψ₃': { name: 'Grønn (Tertiær)', color: '#45B7D1' },
+                'ψ₄': { name: 'Gul (Kvaternær)', color: '#FFE66D' }
+            };
+            
+            Object.keys(vertexRotations).forEach(vertex => {
+                const rot = vertexRotations[vertex];
+                const rotX = (rot.x * 180/Math.PI).toFixed(1);
+                const rotY = (rot.y * 180/Math.PI).toFixed(1);
+                const rotZ = (rot.z * 180/Math.PI).toFixed(1);
+                
+                output += `<strong style="color: ${colors[vertex].color}">${vertex} (${colors[vertex].name}):</strong><br>`;
+                output += `X: ${rotX}°, Y: ${rotY}°, Z: ${rotZ}°<br><br>`;
+            });
+            
+            output += `<strong>Passfrase:</strong> ${passphrase || '(ingen)'}<br><br>`;
+            output += `<strong>🔐 RoTH Seed (SHA-256):</strong><br>`;
+            output += `<code style="font-size: 10px; word-break: break-all;">${seedHash}</code><br><br>`;
+            output += `<em style="color: #4ECDC4;">✅ Unik seed basert på tetraederets geometri!</em>`;
+            
+            document.getElementById('seed-output').innerHTML = output;
         });
     }
     
- function generateSeed() {
-    if (!tetrahedron) return;
-    
-    // Lagre nåværende rotasjon før vi genererer
-    vertexRotations[selectedVertex] = {
-        x: tetrahedron.rotation.x,
-        y: tetrahedron.rotation.y,
-        z: tetrahedron.rotation.z
-    };
-    
-    const passphrase = document.getElementById('passphrase').value.trim();
-    
-    // Forbered data for RoTH hashing
-    const hashInput = prepareHashInput(vertexRotations, passphrase);
-    
-    // Generer RoTH hash (foreløpig simulert)
-    const seedHash = generateRoTHHash(hashInput);
-    
-    let output = '<strong>🎉 Ekte RoTH Seed Generert!</strong><br><br>';
-    
-    // Vis rotasjon for hver farge
-    const colors = {
-        'ψ₁': { name: 'Rød (Primær)', color: '#FF6B6B' },
-        'ψ₂': { name: 'Blå (Sekundær)', color: '#4ECDC4' },
-        'ψ₃': { name: 'Grønn (Tertiær)', color: '#45B7D1' },
-        'ψ₄': { name: 'Gul (Kvaternær)', color: '#FFE66D' }
-    };
-    
-    Object.keys(vertexRotations).forEach(vertex => {
-        const rot = vertexRotations[vertex];
-        const rotX = (rot.x * 180/Math.PI).toFixed(1);
-        const rotY = (rot.y * 180/Math.PI).toFixed(1);
-        const rotZ = (rot.z * 180/Math.PI).toFixed(1);
+    function prepareHashInput(rotations, passphrase) {
+        const encoder = new TextEncoder();
+        let inputBytes = new Uint8Array(0);
         
-        output += `<strong style="color: ${colors[vertex].color}">${vertex} (${colors[vertex].name}):</strong><br>`;
-        output += `X: ${rotX}°, Y: ${rotY}°, Z: ${rotZ}°<br><br>`;
-    });
-    
-    output += `<strong>Passfrase:</strong> ${passphrase || '(ingen)'}<br><br>`;
-    output += `<strong>🔐 RoTH Hash (Hex):</strong><br>`;
-    output += `<code style="font-size: 10px;">${seedHash}</code><br><br>`;
-    output += `<em style="color: #4ECDC4;">✅ Unik seed basert på tetraederets geometri!</em>`;
-    
-    document.getElementById('seed-output').innerHTML = output;
-}
-
-function prepareHashInput(rotations, passphrase) {
-    // Konverter alle rotasjoner til bytes
-    const encoder = new TextEncoder();
-    let inputBytes = new Uint8Array(0);
-    
-    // Legg til hver vertex sin rotasjon
-    Object.keys(rotations).forEach(vertex => {
-        const rot = rotations[vertex];
-        const vertexBytes = new Float32Array([rot.x, rot.y, rot.z]);
-        const combined = new Uint8Array(inputBytes.length + vertexBytes.byteLength);
-        combined.set(inputBytes);
-        combined.set(new Uint8Array(vertexBytes.buffer), inputBytes.length);
-        inputBytes = combined;
-    });
-    
-    // Legg til passphrase
-    if (passphrase) {
-        const passBytes = encoder.encode(passphrase);
-        const combined = new Uint8Array(inputBytes.length + passBytes.length);
-        combined.set(inputBytes);
-        combined.set(passBytes, inputBytes.length);
-        inputBytes = combined;
+        Object.keys(rotations).forEach(vertex => {
+            const rot = rotations[vertex];
+            const vertexBytes = new Float32Array([rot.x, rot.y, rot.z]);
+            const combined = new Uint8Array(inputBytes.length + vertexBytes.byteLength);
+            combined.set(inputBytes);
+            combined.set(new Uint8Array(vertexBytes.buffer), inputBytes.length);
+            inputBytes = combined;
+        });
+        
+        if (passphrase) {
+            const passBytes = encoder.encode(passphrase);
+            const combined = new Uint8Array(inputBytes.length + passBytes.length);
+            combined.set(inputBytes);
+            combined.set(passBytes, inputBytes.length);
+            inputBytes = combined;
+        }
+        
+        return inputBytes;
     }
     
-    return inputBytes;
-}
-
-function generateRoTHHash(inputBytes) {
-    // Midlertidig simulert hash - erstatt med ekte RoTH implementasjon
-    const fakeHash = Array.from({length: 64}, () => 
-        Math.floor(Math.random()*16).toString(16)
-    ).join('');
+    async function generateRoTHHash(inputBytes) {
+        const hashBuffer = await crypto.subtle.digest('SHA-256', inputBytes);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashHex;
+    }
     
-    return fakeHash;
-}
+    function switchMode(mode) {
+        if (mode === 'ceremony') {
+            document.getElementById('ceremony-mode').style.display = 'block';
+            document.getElementById('recovery-mode').classList.remove('active');
+            document.getElementById('btn-ceremony').classList.add('active');
+            document.getElementById('btn-recovery').classList.remove('active');
+        } else {
+            document.getElementById('ceremony-mode').style.display = 'none';
+            document.getElementById('recovery-mode').classList.add('active');
+            document.getElementById('btn-ceremony').classList.remove('active');
+            document.getElementById('btn-recovery').classList.add('active');
+        }
+    }
+    
+    function applyRecoveryAngles() {
+        const vertices = ['ψ₁', 'ψ₂', 'ψ₃', 'ψ₄'];
+        
+        vertices.forEach(vertex => {
+            const x = parseFloat(document.getElementById(`input-${vertex}-x`).value) || 0;
+            const y = parseFloat(document.getElementById(`input-${vertex}-y`).value) || 0;
+            const z = parseFloat(document.getElementById(`input-${vertex}-z`).value) || 0;
+            
+            vertexRotations[vertex] = {
+                x: x * Math.PI / 180,
+                y: y * Math.PI / 180,
+                z: z * Math.PI / 180
+            };
+        });
+        
+        tetrahedron.rotation.x = vertexRotations['ψ₁'].x;
+        tetrahedron.rotation.y = vertexRotations['ψ₁'].y;
+        tetrahedron.rotation.z = vertexRotations['ψ₁'].z;
+        
+        alert('✅ Vinkler lastet! Du kan nå generere seed.');
+    }
     
     function animate() {
         requestAnimationFrame(animate);
         
-        // Oppdater koordinatene kontinuerlig
         if (tetrahedron) {
             const rotation = tetrahedron.rotation;
             document.getElementById('rot-x').textContent = (rotation.x * 180 / Math.PI).toFixed(1) + '°';
@@ -381,7 +424,6 @@ function generateRoTHHash(inputBytes) {
         renderer.render(scene, camera);
     }
     
-    // Start app
     init();
 </script>
 ```
