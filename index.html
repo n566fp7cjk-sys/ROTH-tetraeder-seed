@@ -44,7 +44,6 @@
         </div>
         
         <div id="coordinates">
-            <div>📍 <strong>Posisjon:</strong> <span id="pos-x">0.0</span>, <span id="pos-y">0.0</span>, <span id="pos-z">0.0</span></div>
             <div>🔄 <strong>Rotasjon:</strong> <span id="rot-x">0.0°</span>, <span id="rot-y">0.0°</span>, <span id="rot-z">0.0°</span></div>
             <div>🎯 <strong>Hjørne:</strong> <span id="current-vertex">ψ₁</span></div>
         </div>
@@ -70,9 +69,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.getElementById('container').appendChild(renderer.domElement);
             
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
+            // Kamera - men vi bruker egen dragging for tetraederet
             camera.position.z = 5;
             
             // Lighting
@@ -82,6 +79,7 @@
             scene.add(light);
             
             createTetrahedron();
+            setupTetrahedronMovement(); // ← DETTE ER NØKKELEN!
             animate();
             updateCoordinates();
             selectVertex('ψ₁');
@@ -126,6 +124,44 @@
             });
         }
         
+        // DIN KODE - med små justeringer
+        function setupTetrahedronMovement() {
+            // Gjør tetraederet selv flyttbart og roterbart
+            tetrahedron.position.set(0, 0, 0);
+            
+            // Legg til event listeners for dragging (forenklet)
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+            
+            renderer.domElement.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+            
+            renderer.domElement.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const deltaMove = {
+                    x: e.clientX - previousMousePosition.x,
+                    y: e.clientY - previousMousePosition.y
+                };
+                
+                // Roter tetraederet basert på musebevegelse
+                tetrahedron.rotation.y += deltaMove.x * 0.01;
+                tetrahedron.rotation.x += deltaMove.y * 0.01;
+                
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+            
+            renderer.domElement.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+            
+            renderer.domElement.addEventListener('mouseleave', () => {
+                isDragging = false;
+            });
+        }
+        
         function selectVertex(vertexId) {
             selectedVertex = vertexId;
             
@@ -167,13 +203,12 @@
                 Rotasjon: ${(rotation.x * 180/Math.PI).toFixed(1)}°, ${(rotation.y * 180/Math.PI).toFixed(1)}°, ${(rotation.z * 180/Math.PI).toFixed(1)}°<br>
                 Hjørne: ${selectedVertex}<br>
                 Passfrase: ${passphrase || 'Ingen'}<br>
-                <em style="color: #4ECDC4;">✅ Tetraeder vises og rotasjon fungerer!</em>
+                <em style="color: #4ECDC4;">✅ Nå får vi ekte rotasjonsdata for hashing!</em>
             `;
         }
         
         function animate() {
             requestAnimationFrame(animate);
-            controls.update();
             renderer.render(scene, camera);
         }
         
