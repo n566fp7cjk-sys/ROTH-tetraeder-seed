@@ -151,8 +151,8 @@
                 const rotation = tetrahedron.rotation;
                 
                 document.getElementById('rot-x').textContent = (rotation.x * 360 / Math.PI).toFixed(1) + '°';
-                document.getElementById('rot-y').textContent = (rotation.y * 180 / Math.PI).toFixed(1) + '°';
-                document.getElementById('rot-z').textContent = (rotation.z * 180 / Math.PI).toFixed(1) + '°';
+                document.getElementById('rot-y').textContent = (rotation.y * 360 / Math.PI).toFixed(1) + '°';
+                document.getElementById('rot-z').textContent = (rotation.z * 360 / Math.PI).toFixed(1) + '°';
             }
             
             requestAnimationFrame(updateCoordinates);
