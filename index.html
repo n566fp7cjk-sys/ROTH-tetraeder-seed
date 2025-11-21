@@ -5,14 +5,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body { 
             margin: 0; 
             overflow: hidden; 
             background: #1a1a2e;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         
-        /* Header */
+        /* HEADER */
         .header {
             position: fixed;
             top: 0;
@@ -20,102 +21,129 @@
             right: 0;
             background: rgba(0,0,0,0.9);
             color: white;
-            padding: 15px;
+            padding: 15px 20px;
             text-align: center;
-            z-index: 1000;
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            z-index: 1000;
         }
         
         .header h1 {
-            font-size: 20px;
+            font-size: 24px;
             margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
-        /* Vertex knapper - horisontal rad */
-        .vertex-buttons {
+        .header .subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        
+        /* MAIN TETRAHEDRON CONTAINER */
+        #container {
             position: fixed;
-            top: 70px;
+            top: 80px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 200px);
+            z-index: 1;
+        }
+        
+        /* ROTATION DISPLAY - bak tetraederet */
+        .rotation-display {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            text-align: center;
+            min-width: 280px;
+            z-index: 2;
+        }
+        
+        .rotation-values {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .rotation-axis {
+            text-align: center;
+        }
+        
+        .rotation-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4ECDC4;
+        }
+        
+        .rotation-label {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+        
+        .current-vertex {
+            font-size: 16px;
+            color: #FF6B6B;
+            margin-top: 10px;
+        }
+        
+        /* CONTROL PANEL - nederst */
+        .control-panel {
+            position: fixed;
+            bottom: 0;
             left: 0;
             right: 0;
-            display: flex;
-            justify-content: space-around;
-            padding: 10px;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.9);
+            padding: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
             z-index: 1000;
         }
         
-        .vertex-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: 3px solid transparent;
-            cursor: pointer;
-            font-size: 20px;
-            font-weight: bold;
+        .vertex-selector {
             display: flex;
-            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
             justify-content: center;
+        }
+        
+        .vertex-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
             transition: all 0.3s ease;
+            max-width: 80px;
         }
         
         .vertex-btn.selected {
-            border-color: white;
-            transform: scale(1.1);
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.05);
         }
         
-        .vertex-ψ₁ { background: #FF6B6B; color: white; }
-        .vertex-ψ₂ { background: #4ECDC4; color: white; }
-        .vertex-ψ₃ { background: #45B7D1; color: white; }
-        .vertex-ψ₄ { background: #FFE66D; color: #333; }
+        .vertex-ψ₁ { border-color: #FF6B6B; color: #FF6B6B; }
+        .vertex-ψ₂ { border-color: #4ECDC4; color: #4ECDC4; }
+        .vertex-ψ₃ { border-color: #45B7D1; color: #45B7D1; }
+        .vertex-ψ₄ { border-color: #FFE66D; color: #FFE66D; }
         
-        /* Hovedinnhold - tetraeder sentrert */
-        .main-content {
-            position: fixed;
-            top: 140px;
-            bottom: 300px;
-            left: 0;
-            right: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        #container {
-            width: 100%;
-            height: 100%;
-        }
-        
-        /* Koordinater - under tetraeder */
-        .coordinates {
-            position: fixed;
-            bottom: 250px;
-            left: 0;
-            right: 0;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 15px;
-            text-align: center;
-            font-family: monospace;
-            font-size: 16px;
-        }
-        
-        /* Kontroller - nederst */
-        .controls {
-            position: fixed;
-            bottom: 150px;
-            left: 0;
-            right: 0;
-            padding: 15px;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        #passphrase {
+        .passphrase-input {
             width: 100%;
             padding: 15px;
+            margin-bottom: 10px;
             border: none;
             border-radius: 10px;
             background: rgba(255,255,255,0.1);
@@ -123,55 +151,74 @@
             font-size: 16px;
         }
         
-        #generate-btn {
+        .generate-btn {
             width: 100%;
-            padding: 15px;
-            background: #667eea;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 10px;
             font-size: 18px;
             font-weight: bold;
             cursor: pointer;
+            transition: transform 0.2s ease;
         }
         
-        /* Output - aller nederst */
-        #seed-output {
+        .generate-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* OUTPUT PANEL */
+        .output-panel {
             position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 150px;
-            background: rgba(0,0,0,0.9);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
             color: white;
-            padding: 15px;
+            padding: 25px;
+            border-radius: 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(20px);
+            max-width: 90vw;
+            max-height: 80vh;
             overflow-y: auto;
-            font-family: monospace;
-            font-size: 12px;
+            z-index: 2000;
+            display: none;
         }
         
-        /* Mode toggle */
-        .mode-toggle {
-            position: fixed;
-            top: 130px;
-            right: 10px;
-            display: flex;
-            gap: 5px;
-            z-index: 1001;
+        .output-panel.active {
+            display: block;
         }
         
-        .mode-btn {
-            padding: 8px 12px;
-            background: rgba(0,0,0,0.7);
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.1);
             color: white;
             border: none;
-            border-radius: 5px;
-            font-size: 12px;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
             cursor: pointer;
+            font-size: 16px;
         }
         
-        .mode-btn.active {
-            background: #667eea;
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 20px; }
+            .header .subtitle { font-size: 12px; }
+            #container { height: calc(100vh - 180px); }
+            .rotation-value { font-size: 20px; }
+            .vertex-btn { padding: 10px; font-size: 14px; }
+            .passphrase-input, .generate-btn { font-size: 16px; padding: 14px; }
+        }
+        
+        @media (max-width: 480px) {
+            .rotation-values { gap: 10px; }
+            .rotation-value { font-size: 18px; }
+            .rotation-display { padding: 15px; min-width: 250px; }
         }
     </style>
 </head>
@@ -179,49 +226,55 @@
     <!-- HEADER -->
     <div class="header">
         <h1>🔺 RoTH Seed Ceremony</h1>
+        <div class="subtitle">Rotér tetraederet • Generer kryptografiske seeds</div>
     </div>
     
-    <!-- VERTEX KNAPPER -->
-    <div class="vertex-buttons">
-        <div class="vertex-btn vertex-ψ₁ selected" onclick="selectVertex('ψ₁')">1</div>
-        <div class="vertex-btn vertex-ψ₂" onclick="selectVertex('ψ₂')">2</div>
-        <div class="vertex-btn vertex-ψ₃" onclick="selectVertex('ψ₃')">3</div>
-        <div class="vertex-btn vertex-ψ₄" onclick="selectVertex('ψ₄')">4</div>
+    <!-- MAIN TETRAHEDRON -->
+    <div id="container"></div>
+    
+    <!-- ROTATION DISPLAY - bak tetraederet -->
+    <div class="rotation-display">
+        <div class="rotation-values">
+            <div class="rotation-axis">
+                <div class="rotation-value" id="rot-x">0.0°</div>
+                <div class="rotation-label">X-rotation</div>
+            </div>
+            <div class="rotation-axis">
+                <div class="rotation-value" id="rot-y">0.0°</div>
+                <div class="rotation-label">Y-rotation</div>
+            </div>
+            <div class="rotation-axis">
+                <div class="rotation-value" id="rot-z">0.0°</div>
+                <div class="rotation-label">Z-rotation</div>
+            </div>
+        </div>
+        <div class="current-vertex">
+            Aktivit hjørne: <strong id="current-vertex">ψ₁</strong>
+        </div>
     </div>
     
-    <!-- MODE TOGGLE -->
-    <div class="mode-toggle">
-        <button class="mode-btn active" onclick="switchMode('ceremony')">🎨</button>
-        <button class="mode-btn" onclick="switchMode('recovery')">🔢</button>
+    <!-- CONTROL PANEL - nederst -->
+    <div class="control-panel">
+        <div class="vertex-selector">
+            <button class="vertex-btn vertex-ψ₁" onclick="selectVertex('ψ₁')">ψ₁</button>
+            <button class="vertex-btn vertex-ψ₂" onclick="selectVertex('ψ₂')">ψ₂</button>
+            <button class="vertex-btn vertex-ψ₃" onclick="selectVertex('ψ₃')">ψ₃</button>
+            <button class="vertex-btn vertex-ψ₄" onclick="selectVertex('ψ₄')">ψ₄</button>
+        </div>
+        
+        <input type="text" class="passphrase-input" id="passphrase" placeholder="Skriv passfrase (valgfritt)...">
+        <button class="generate-btn" onclick="generateSeed()">🎲 Generer Seed</button>
     </div>
     
-    <!-- HOVEDINNHOLD - TETRAEDER -->
-    <div class="main-content">
-        <div id="container"></div>
-    </div>
-    
-    <!-- KOORDINATER -->
-    <div class="coordinates">
-        <div>🔄 <strong>Rotasjon:</strong> <span id="rot-x">0.0°</span>, <span id="rot-y">0.0°</span>, <span id="rot-z">0.0°</span></div>
-        <div>🎯 <strong>Hjørne:</strong> <span id="current-vertex">ψ₁</span></div>
-    </div>
-    
-    <!-- KONTROLLER -->
-    <div class="controls">
-        <input type="text" id="passphrase" placeholder="Skriv din passfrase her...">
-        <button id="generate-btn" onclick="generateSeed()">🎲 Generer Seed</button>
-    </div>
-    
-    <!-- OUTPUT -->
-    <div id="seed-output">
-        <!-- Resultat vises her -->
+    <!-- OUTPUT PANEL -->
+    <div class="output-panel" id="output-panel">
+        <button class="close-btn" onclick="closeOutput()">×</button>
+        <div id="seed-output"></div>
     </div>
 
     <script>
-        // BEHOLD ALLE DINE EKSISTERENDE JavaScript FUNKSJONER
-        // init(), createTetrahedron(), setupTetrahedronDrag(), 
-        // selectVertex(), generateSeed(), generateRoTHHash(), etc.
-        // ALT FORBLIR IDENTISK - BARE UI STRUKTUREN ENDRES
+        // JavaScript koden din her (samme som før)
+        // Bare oppdater selectVertex() og animate() for ny UI
         
         let scene, camera, renderer, tetrahedron;
         let selectedVertex = 'ψ₁';
@@ -254,11 +307,30 @@
             animate();
         }
         
-        // RESTEN AV DINE FUNKSJONER FORBLIR HELT IDENTISKE
-        // createTetrahedron(), setupTetrahedronDrag(), selectVertex(), 
-        // generateSeed(), prepareHashInput(), generateRoTHHash(), etc.
-        
-        // ... [LIM INN ALLE DINE EKSISTERENDE FUNKSJONER HER] ...
+        function selectVertex(vertexId) {
+            if (tetrahedron) {
+                vertexRotations[selectedVertex] = {
+                    x: tetrahedron.rotation.x,
+                    y: tetrahedron.rotation.y,
+                    z: tetrahedron.rotation.z
+                };
+            }
+            
+            selectedVertex = vertexId;
+            
+            if (tetrahedron) {
+                tetrahedron.rotation.x = vertexRotations[vertexId].x;
+                tetrahedron.rotation.y = vertexRotations[vertexId].y;
+                tetrahedron.rotation.z = vertexRotations[vertexId].z;
+            }
+            
+            // Oppdater UI
+            document.querySelectorAll('.vertex-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            document.querySelector(`.vertex-${vertexId}`).classList.add('selected');
+            document.getElementById('current-vertex').textContent = vertexId;
+        }
         
         function animate() {
             requestAnimationFrame(animate);
@@ -272,6 +344,13 @@
             
             renderer.render(scene, camera);
         }
+        
+        function closeOutput() {
+            document.getElementById('output-panel').classList.remove('active');
+        }
+        
+        // Resten av JavaScript-koden din (createTetrahedron, setupTetrahedronDrag, generateSeed, etc.)
+        // ... samme som før ...
         
         init();
     </script>
