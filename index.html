@@ -3,7 +3,6 @@
 <head>
     <title>RoTH Tetraeder Seed Ceremony</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #1a1a2e; }
         #ui { 
@@ -57,7 +56,7 @@
     </div>
 
     <script>
-        let scene, camera, renderer, controls, tetrahedron;
+        let scene, camera, renderer, tetrahedron;
         let selectedVertex = 'ψ₁';
         let vertexSpheres = [];
         
@@ -69,7 +68,6 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.getElementById('container').appendChild(renderer.domElement);
             
-            // Kamera - men vi bruker egen dragging for tetraederet
             camera.position.z = 5;
             
             // Lighting
@@ -79,26 +77,22 @@
             scene.add(light);
             
             createTetrahedron();
-            setupTetrahedronMovement(); // ← DETTE ER NØKKELEN!
+            setupTetrahedronMovement();
             animate();
-            updateCoordinates();
             selectVertex('ψ₁');
         }
         
         function createTetrahedron() {
-            // Tetrahedron geometry
             const geometry = new THREE.TetrahedronGeometry(2);
             const material = new THREE.MeshPhongMaterial({
                 color: 0x444444, 
                 transparent: true, 
-                opacity: 0.3,
-                wireframe: false
+                opacity: 0.3
             });
             
             tetrahedron = new THREE.Mesh(geometry, material);
             scene.add(tetrahedron);
             
-            // Create vertex spheres INSIde the tetrahedron
             const sphereGeometry = new THREE.SphereGeometry(0.2, 16, 16);
             const vertices = [
                 { pos: [1.3, 1.3, 1.3], color: 0xFF6B6B, id: 'ψ₁' },
@@ -117,19 +111,12 @@
                 const sphere = new THREE.Mesh(sphereGeometry, material);
                 sphere.position.set(...vertex.pos);
                 sphere.userData = { id: vertex.id };
-                
-                // Add sphere to tetrahedron (not scene) so it moves with tetrahedron
                 tetrahedron.add(sphere);
                 vertexSpheres.push(sphere);
             });
         }
         
-        // DIN KODE - med små justeringer
         function setupTetrahedronMovement() {
-            // Gjør tetraederet selv flyttbart og roterbart
-            tetrahedron.position.set(0, 0, 0);
-            
-            // Legg til event listeners for dragging (forenklet)
             let isDragging = false;
             let previousMousePosition = { x: 0, y: 0 };
             
@@ -146,7 +133,6 @@
                     y: e.clientY - previousMousePosition.y
                 };
                 
-                // Roter tetraederet basert på musebevegelse
                 tetrahedron.rotation.y += deltaMove.x * 0.01;
                 tetrahedron.rotation.x += deltaMove.y * 0.01;
                 
@@ -164,15 +150,11 @@
         
         function selectVertex(vertexId) {
             selectedVertex = vertexId;
-            
-            // Update UI
             document.querySelectorAll('.vertex').forEach(el => {
                 el.classList.toggle('selected', el.textContent.includes(vertexId));
             });
-            
             document.getElementById('current-vertex').textContent = vertexId;
             
-            // Visual feedback
             vertexSpheres.forEach(sphere => {
                 const isSelected = sphere.userData.id === vertexId;
                 sphere.material.emissiveIntensity = isSelected ? 0.8 : 0.3;
@@ -180,16 +162,18 @@
             });
         }
         
-        function updateCoordinates() {
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Oppdater koordinater hver frame
             if (tetrahedron) {
                 const rotation = tetrahedron.rotation;
-                
                 document.getElementById('rot-x').textContent = (rotation.x * 180 / Math.PI).toFixed(1) + '°';
                 document.getElementById('rot-y').textContent = (rotation.y * 180 / Math.PI).toFixed(1) + '°';
                 document.getElementById('rot-z').textContent = (rotation.z * 180 / Math.PI).toFixed(1) + '°';
             }
             
-            requestAnimationFrame(updateCoordinates);
+            renderer.render(scene, camera);
         }
         
         function generateSeed() {
@@ -203,13 +187,8 @@
                 Rotasjon: ${(rotation.x * 180/Math.PI).toFixed(1)}°, ${(rotation.y * 180/Math.PI).toFixed(1)}°, ${(rotation.z * 180/Math.PI).toFixed(1)}°<br>
                 Hjørne: ${selectedVertex}<br>
                 Passfrase: ${passphrase || 'Ingen'}<br>
-                <em style="color: #4ECDC4;">✅ Nå får vi ekte rotasjonsdata for hashing!</em>
+                <em style="color: #4ECDC4;">✅ Koordinater fungerer nå!</em>
             `;
-        }
-        
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
         }
         
         // Start app
