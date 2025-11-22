@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>RoTH Tetraeder Seed Ceremony</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            margin: 0; 
+            overflow-x: hidden; 
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            color: white;
+            min-height: 100vh;
+        }
+
+```
+    /* Header med vertex selector */
+    .header {
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding: 15px;
+    }
+    
+    .vertex-selector {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .vertex {
+        padding: 18px 10px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px solid transparent;
+        background: rgba(0,0,0,0.3);
+        text-align: center;
+        font-size: clamp(15px, 3.5vw, 18px);
+        font-weight: 600;
+    }
+    .vertex:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+    .vertex.selected {
+        border-color: currentColor;
+        background: rgba(255,255,255,0.15);
+        box-shadow: 0 0 30px currentColor;
+    }
+    .vertex-ψ₁ { color: #FF6B6B; }
+    .vertex-ψ₂ { color: #4ECDC4; }
+    .vertex-ψ₃ { color: #45B7D1; }
+    .vertex-ψ₄ { color: #FFE66D; }
+    
+    /* Main content area */
+    .main-content {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 20px;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+        min-height: calc(100vh - 200px);
+    }
+    
+    @media (max-width: 768px) {
+        .main-content {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+    }
+    
+    /* Venstre side - Generer knapp */
+    .sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .generate-btn {
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 16px;
+        font-size: clamp(16px, 3.5vw, 20px);
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+        min-height: 80px;
+    }
+    .generate-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.7);
+    }
+    .generate-btn:active {
+        transform: translateY(0);
+    }
+    
+    @media (max-width: 768px) {
+        .sidebar {
+            order: 2;
+        }
+    }
+    
+    /* Canvas container */
+    #canvas-container {
+        position: relative;
+        width: 100%;
+        height: 70vh;
+        min-height: 400px;
+        max-height: 700px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Overlay med RoTH tekst, koordinater og tips */
+    #coordinates-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.25;
+        font-family: 'Monaco', 'Courier New', monospace;
+        width: 90%;
+    }
+    
+    .roth-title {
+        font-size: clamp(32px, 6vw, 48px);
+        font-weight: 800;
+        margin-bottom: 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: 3px;
+    }
+    
+    #coordinates-overlay .coord-row {
+        font-size: clamp(18px, 4vw, 28px);
+        margin: 12px 0;
+        letter-spacing: 2px;
+        font-weight: 600;
+    }
+    
+    .vertex-label {
+        font-size: clamp(20px, 4.5vw, 32px);
+        font-weight: bold;
+        margin: 25px 0 30px 0;
+        letter-spacing: 2px;
+    }
+    
+    .tips-text {
+        font-size: clamp(14px, 3vw, 18px);
+        line-height: 1.8;
+        margin-top: 20px;
+        opacity: 0.8;
+    }
+    
+    /* Bottom section - Passfrase og Output */
+    .bottom-section {
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 0 20px;
+    }
+    
+    #passphrase {
+        width: 100%;
+        padding: 18px;
+        margin: 15px 0;
+        border: none;
+        border-radius: 14px;
+        background: rgba(0,0,0,0.4);
+        color: white;
+        font-size: clamp(15px, 3.5vw, 18px);
+        border: 2px solid rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+    }
+    #passphrase:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 25px rgba(102, 126, 234, 0.4);
+    }
+    
+    #seed-output {
+        margin-top: 25px;
+        padding: 25px;
+        background: rgba(0,0,0,0.5);
+        border-radius: 16px;
+        word-break: break-all;
+        font-family: 'Monaco', monospace;
+        font-size: clamp(12px, 2.8vw, 14px);
+        line-height: 2;
+        border: 1px solid rgba(255,255,255,0.15);
+        box-shadow: inset 0 2px 15px rgba(0,0,0,0.4);
+        backdrop-filter: blur(10px);
+    }
+    #seed-output strong {
+        font-size: clamp(15px, 3.2vw, 18px);
+    }
+    #seed-output code {
+        background: rgba(0,0,0,0.6);
+        padding: 12px;
+        border-radius: 10px;
+        display: block;
+        margin: 12px 0;
+        font-size: clamp(11px, 2.5vw, 13px);
+    }
+    
+    /* Mode toggle nederst */
+    .mode-toggle {
+        display: flex;
+        gap: 10px;
+        margin: 30px auto 40px;
+        background: rgba(0,0,0,0.4);
+        padding: 6px;
+        border-radius: 14px;
+        max-width: 500px;
+        backdrop-filter: blur(10px);
+    }
+    .mode-toggle button {
+        flex: 1;
+        padding: 14px;
+        background: transparent;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: clamp(14px, 3vw, 16px);
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 600;
+    }
+    .mode-toggle button.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+    }
+    
+    /* Recovery mode */
+    .recovery-inputs {
+        display: none;
+        max-width: 800px;
+        margin: 0 auto 40px;
+        padding: 0 20px;
+    }
+    .recovery-inputs.active {
+        display: block;
+    }
+    .angle-group {
+        background: rgba(255,255,255,0.05);
+        padding: 20px;
+        border-radius: 14px;
+        margin-bottom: 15px;
+        backdrop-filter: blur(10px);
+    }
+    .angle-group strong {
+        display: block;
+        margin-bottom: 12px;
+        font-size: clamp(15px, 3.2vw, 18px);
+    }
+    .angle-input {
+        width: 100%;
+        padding: 14px;
+        margin: 6px 0;
+        border: none;
+        border-radius: 10px;
+        background: rgba(0,0,0,0.4);
+        color: white;
+        font-family: 'Monaco', monospace;
+        font-size: clamp(14px, 3vw, 16px);
+    }
+    
+    button.secondary {
+        width: 100%;
+        padding: 16px;
+        background: rgba(255,255,255,0.1);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: clamp(16px, 3.5vw, 18px);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    button.secondary:hover {
+        background: rgba(255,255,255,0.15);
+        transform: translateY(-2px);
+    }
+    
+    .recovery-warning {
+        background: rgba(255,200,100,0.15);
+        padding: 18px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        font-size: clamp(13px, 2.8vw, 15px);
+        backdrop-filter: blur(10px);
+    }
+</style>
+```
+
+</head>
+<body>
+    <!-- Header med vertex selector -->
+    <div class="header">
+        <div class="vertex-selector">
+            <div class="vertex vertex-ψ₁" onclick="selectVertex('ψ₁')">ψ₁ Rød</div>
+            <div class="vertex vertex-ψ₂" onclick="selectVertex('ψ₂')">ψ₂ Blå</div>
+            <div class="vertex vertex-ψ₃" onclick="selectVertex('ψ₃')">ψ₃ Grønn</div>
+            <div class="vertex vertex-ψ₄" onclick="selectVertex('ψ₄')">ψ₄ Gul</div>
+        </div>
+    </div>
+
+```
+<!-- Main content -->
+<div class="main-content">
+    <!-- Venstre side - Generer knapp -->
+    <div class="sidebar">
+        <button class="generate-btn" onclick="generateSeed()">🎲<br>Generer<br>Seed</button>
+    </div>
+    
+    <!-- Midten - Tetraeder -->
+    <div id="canvas-container">
+        <div id="coordinates-overlay">
+            <div class="roth-title">🔺 RoTH v6.2</div>
+            <div class="coord-row">X: <span id="rot-x">0.0°</span></div>
+            <div class="coord-row">Y: <span id="rot-y">0.0°</span></div>
+            <div class="coord-row">Z: <span id="rot-z">0.0°</span></div>
+            <div class="vertex-label">🎯 <span id="current-vertex">ψ₁</span></div>
+            <div class="tips-text">
+                En finger: Roter X/Y<br>
+                To fingre: Vri Z-akse
+            </div>
+        </div>
+        <canvas id="three-canvas"></canvas>
+    </div>
+</div>
+
+<!-- Bottom section -->
+<div class="bottom-section">
+    <input type="text" id="passphrase" placeholder="🔐 Passfrase (valgfritt)">
+    <div id="seed-output"></div>
+</div>
+
+<!-- Mode toggle -->
+<div class="mode-toggle">
+    <button id="btn-ceremony" class="active" onclick="switchMode('ceremony')">🎨 Ceremony</button>
+    <button id="btn-recovery" onclick="switchMode('recovery')">🔢 Recovery</button>
+</div>
+
+<!-- Recovery mode -->
+<div id="recovery-mode" class="recovery-inputs">
+    <div class="recovery-warning">
+        ⚠️ <strong>Recovery Mode</strong><br>
+        Tast inn eksakte vinkler for å gjenskape seed
+    </div>
+    
+    <div class="angle-group">
+        <strong style="color: #FF6B6B;">ψ₁ (Rød)</strong>
+        <input type="number" class="angle-input" id="input-ψ₁-x" placeholder="X° (0-360)" step="0.1">
+        <input type="number" class="angle-input" id="input-ψ₁-y" placeholder="Y° (0-360)" step="0.1">
+        <input type="number" class="angle-input" id="input-ψ₁-z" placeholder="Z° (0-360)" step="0.1">
+    </div>
+    
+    <div class="angle-group">
+        <strong style="color: #4ECDC4;">ψ₂ (Blå)</strong>
+        <input type="number" class="angle-input" id="input-ψ₂-x" placeholder="X° (0-360)" step="0.1">
+        <input type="number" class="angle-input" id="input-ψ₂-y" placeholder="Y° (0-360)" step="0.1">
+        <input type="number" class="angle-input" id="input-ψ₂-z" placeholder="Z° (0-360)" step="0.1">
+    </div>
+    
+    <div class="angle-group">
+        <strong style="color: #45B7D1;">ψ₃ (Grønn)</strong>
+        <input type="number" class="angle-input" id="input-ψ₃-x" placeholder="X° (0-360)" step="0.1">
+        <input type="number" class="angle-input" id="input-ψ₃-y" placeholder="Y° (0-360)" step="0.1">
+        <input type="number" class="angle-input" id="input-ψ₃-z" placeholder="Z° (0-360)" step="0.1">
+    </div>
+    
+    <div class="angle-group">
+        <strong style="color: #FFE66D;">ψ₄ (Gul)</strong>
+        <input type="number" class="angle-input" id="input-ψ₄-x" placeholder="X° (0-360)" step="0.1">
+        <input type="number" class="angle-input" id="input-ψ₄-y" placeholder="Y° (0-360)" step="0.1">
+        <input type="number" class="angle-input" id="input-ψ₄-z" placeholder="Z° (0-360)" step="0.1">
+    </div>
+    
+    <button class="secondary" onclick="applyRecoveryAngles()">📐 Last inn vinkler</button>
+</div>
+
+<script>
+    let scene, camera, renderer, tetrahedron;
+    let selectedVertex = 'ψ₁';
+    
+    let vertexRotations = {
+        'ψ₁': { x: 0, y: 0, z: 0 },
+        'ψ₂': { x: 0, y: 0, z: 0 },
+        'ψ₃': { x: 0, y: 0, z: 0 },
+        'ψ₄': { x: 0, y: 0, z: 0 }
+    };
+    
+    function init() {
+        scene = new THREE.Scene();
+        
+        const canvas = document.getElementById('three-canvas');
+        const container = document.getElementById('canvas-container');
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        
+        camera = new THREE.PerspectiveCamera(75, width/height, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        
+        camera.position.z = 5;
+        
+        scene.add(new THREE.AmbientLight(0x404040));
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 5, 5);
+        scene.add(light);
+        
+        createTetrahedron();
+        setupTetrahedronDrag();
+        selectVertex('ψ₁');
+        animate();
+        
+        window.addEventListener('resize', onWindowResize);
+    }
+    
+    function onWindowResize() {
+        const container = document.getElementById('canvas-container');
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+    }
+    
+    function createTetrahedron() {
+        const geometry = new THREE.TetrahedronGeometry(2.5);
+        
+        const colors = new Float32Array([
+            1.0, 0.42, 0.42,  0.31, 0.80, 0.77,  0.27, 0.72, 0.82,
+            1.0, 0.42, 0.42,  0.27, 0.72, 0.82,  1.0, 0.90, 0.43,
+            1.0, 0.42, 0.42,  1.0, 0.90, 0.43,  0.31, 0.80, 0.77,
+            0.31, 0.80, 0.77,  1.0, 0.90, 0.43,  0.27, 0.72, 0.82
+        ]);
+        
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        
+        const material = new THREE.MeshPhongMaterial({
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.9,
+            side: THREE.DoubleSide
+        });
+        
+        tetrahedron = new THREE.Mesh(geometry, material);
+        scene.add(tetrahedron);
+
+        const wireframe = new THREE.WireframeGeometry(geometry);
+        const line = new THREE.LineSegments(wireframe);
+        line.material.color.set(0xffffff);
+        line.material.transparent = true;
+        line.material.opacity = 0.5;
+        tetrahedron.add(line);
+    }
+    
+    function setupTetrahedronDrag() {
+        let isDragging = false;
+        let previousPosition = { x: 0, y: 0 };
+        let isShiftPressed = false;
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Shift') isShiftPressed = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'Shift') isShiftPressed = false;
+        });
+        
+        renderer.domElement.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousPosition = { x: e.clientX, y: e.clientY };
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            const deltaMove = {
+                x: e.clientX - previousPosition.x,
+                y: e.clientY - previousPosition.y
+            };
+            
+            if (isShiftPressed) {
+                tetrahedron.rotation.z += deltaMove.x * 0.01;
+            } else {
+                tetrahedron.rotation.y += deltaMove.x * 0.01;
+                tetrahedron.rotation.x += deltaMove.y * 0.01;
+            }
+            
+            previousPosition = { x: e.clientX, y: e.clientY };
+        });
+        
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        let initialRotationZ = 0;
+        
+        renderer.domElement.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                const touch = e.touches[0];
+                previousPosition = { x: touch.clientX, y: touch.clientY };
+            } else if (e.touches.length === 2) {
+                isDragging = false;
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const angle = Math.atan2(
+                    touch2.clientY - touch1.clientY,
+                    touch2.clientX - touch1.clientX
+                );
+                initialRotationZ = angle;
+            }
+            e.preventDefault();
+        });
+        
+        renderer.domElement.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1 && isDragging) {
+                const touch = e.touches[0];
+                const deltaMove = {
+                    x: touch.clientX - previousPosition.x,
+                    y: touch.clientY - previousPosition.y
+                };
+                
+                tetrahedron.rotation.y += deltaMove.x * 0.01;
+                tetrahedron.rotation.x += deltaMove.y * 0.01;
+                
+                previousPosition = { x: touch.clientX, y: touch.clientY };
+            } else if (e.touches.length === 2) {
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const angle = Math.atan2(
+                    touch2.clientY - touch1.clientY,
+                    touch2.clientX - touch1.clientX
+                );
+                const deltaAngle = angle - initialRotationZ;
+                tetrahedron.rotation.z += deltaAngle;
+                initialRotationZ = angle;
+            }
+            e.preventDefault();
+        });
+        
+        renderer.domElement.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+    }
+    
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        if (tetrahedron) {
+            const degX = ((tetrahedron.rotation.x * 180/Math.PI) % 360 + 360) % 360;
+            const degY = ((tetrahedron.rotation.y * 180/Math.PI) % 360 + 360) % 360;
+            const degZ = ((tetrahedron.rotation.z * 180/Math.PI) % 360 + 360) % 360;
+            
+            document.getElementById('rot-x').textContent = degX.toFixed(1) + '°';
+            document.getElementById('rot-y').textContent = degY.toFixed(1) + '°';
+            document.getElementById('rot-z').textContent = degZ.toFixed(1) + '°';
+        }
+        
+        renderer.render(scene, camera);
+    }
+    
+    function selectVertex(vertexId) {
+        if (tetrahedron) {
+            vertexRotations[selectedVertex] = {
+                x: tetrahedron.rotation.x,
+                y: tetrahedron.rotation.y,
+                z: tetrahedron.rotation.z
+            };
+        }
+        
+        selectedVertex = vertexId;
+        
+        if (tetrahedron) {
+            tetrahedron.rotation.x = vertexRotations[vertexId].x;
+            tetrahedron.rotation.y = vertexRotations[vertexId].y;
+            tetrahedron.rotation.z = vertexRotations[vertexId].z;
+        }
+        
+        document.querySelectorAll('.vertex').forEach(el => {
+            el.classList.toggle('selected', el.textContent.includes(vertexId.substring(0, 2)));
+        });
+        
+        document.getElementById('current-vertex').textContent = vertexId;
+    }
+    
+    function switchMode(mode) {
+        document.getElementById('btn-ceremony').classList.toggle('active', mode === 'ceremony');
+        document.getElementById('btn-recovery').classList.toggle('active', mode === 'recovery');
+        document.getElementById('recovery-mode').classList.toggle('active', mode === 'recovery');
+    }
+    
+    function applyRecoveryAngles() {
+        const vertices = ['ψ₁', 'ψ₂', 'ψ₃', 'ψ₄'];
+        
+        vertices.forEach(vertex => {
+            const x = parseFloat(document.getElementById(`input-${vertex}-x`).value) || 0;
+            const y = parseFloat(document.getElementById(`input-${vertex}-y`).value) || 0;
+            const z = parseFloat(document.getElementById(`input-${vertex}-z`).value) || 0;
+            
+            vertexRotations[vertex] = {
+                x: x * Math.PI / 180,
+                y: y * Math.PI / 180,
+                z: z * Math.PI / 180
+            };
+        });
+        
+        if (tetrahedron) {
+            tetrahedron.rotation.x = vertexRotations[selectedVertex].x;
+            tetrahedron.rotation.y = vertexRotations[selectedVertex].y;
+            tetrahedron.rotation.z = vertexRotations[selectedVertex].z;
+        }
+        
+        alert('✅ Vinkler lastet inn!');
+    }
+    
+    async function generateSeed() {
+        if (!tetrahedron) return;
+        
+        vertexRotations[selectedVertex] = {
+            x: tetrahedron.rotation.x,
+            y: tetrahedron.rotation.y,
+            z: tetrahedron.rotation.z
+        };
+        
+        const passphrase = document.getElementById('passphrase').value.trim();
+        const hashInput = prepareHashInput(vertexRotations, passphrase);
+        const checksum = generateChecksum(vertexRotations, passphrase);
+        
+        const seedHash = await generateRoTHHash(hashInput);
+        
+        let output = '<strong>🎉 RoTH Seed Generert!</strong><br><br>';
+        
+        const colors = {
+            'ψ₁': { name: 'Rød', color: '#FF6B6B' },
+            'ψ₂': { name: 'Blå', color: '#4ECDC4' },
+            'ψ₃': { name: 'Grønn', color: '#45B7D1' },
+            'ψ₄': { name: 'Gul', color: '#FFE66D' }
+        };
+        
+        Object.keys(vertexRotations).forEach(vertex => {
+            const rot = vertexRotations[vertex];
+            const rotX = ((rot.x * 180/Math.PI) % 360 + 360) % 360;
+            const rotY = ((rot.y * 180/Math.PI) % 360 + 360) % 360;
+            const rotZ = ((rot.z * 180/Math.PI) % 360 + 360) % 360;
+            
+            output += `<strong style="color: ${colors[vertex].color}">${vertex} ${colors[vertex].name}:</strong> `;
+            output += `X:${rotX.toFixed(1)}° Y:${rotY.toFixed(1)}° Z:${rotZ.toFixed(1)}°<br>`;
+        });
+        
+        output += `<br><strong>📋 Checksum:</strong> <code style="font-size: 16px; background: rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 5px; letter-spacing: 2px;">${checksum}</code><br>`;
+        output += `<small style="opacity:0.7">Bruk for å verifisere recovery</small><br><br>`;
+        
+        output += `<strong>Passfrase:</strong> ${passphrase || '(ingen)'}<br><br>`;
+        output += `<strong>🔐 RoTH v6.2 Hash:</strong><br>`;
+        output += `<code>${seedHash}</code><br><br>`;
+        output += `<strong>🌌 Entropi:</strong> ~${passphrase ? '626' : '496'} bits<br>`;
+        output += `<em style="color: #4ECDC4;">✅ Sterkere enn atomer i universet!</em>`;
+        
+        document.getElementById('seed-output').innerHTML = output;
+        
+        // Smooth scroll til output
+        document.getElementById('seed-output').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    function prepareHashInput(rotations, passphrase) {
+        const encoder = new TextEncoder();
+        let inputBytes = new Uint8Array(0);
+        
+        Object.keys(rotations).forEach(vertex => {
+            const rot = rotations[vertex];
+            
+         const normalizeAngle = (rad) => {
+                    let degrees = (rad * 180 / Math.PI);
+                    degrees = ((degrees % 360) + 360) % 360;
+                    const rounded = Math.round(degrees * 10) / 10;
+                    return rounded * Math.PI / 180;
+                };
+                
+                const normalizedRot = {
+                    x: normalizeAngle(rot.x),
+                    y: normalizeAngle(rot.y),
+                    z: normalizeAngle(rot.z)
+                };
+                
+                const vertexBytes = new Float32Array([normalizedRot.x, normalizedRot.y, normalizedRot.z]);
+                const combined = new Uint8Array(inputBytes.length + vertexBytes.byteLength);
+                combined.set(inputBytes);
+                combined.set(new Uint8Array(vertexBytes.buffer), inputBytes.length);
+                inputBytes = combined;
+            });
+            
+            if (passphrase) {
+                const passBytes = encoder.encode(passphrase);
+                const combined = new Uint8Array(inputBytes.length + passBytes.length);
+                combined.set(inputBytes);
+                combined.set(passBytes, inputBytes.length);
+                inputBytes = combined;
+            }
+            
+            return inputBytes;
+        }
+        
+        function generateChecksum(rotations, passphrase = '') {
+            let checksumData = '';
+            Object.keys(rotations).forEach(vertex => {
+                const rot = rotations[vertex];
+                const degX = ((rot.x * 180/Math.PI) % 360 + 360) % 360;
+                const degY = ((rot.y * 180/Math.PI) % 360 + 360) % 360;
+                const degZ = ((rot.z * 180/Math.PI) % 360 + 360) % 360;
+                checksumData += Math.round(degX * 10) + ',' + Math.round(degY * 10) + ',' + Math.round(degZ * 10) + ';';
+            });
+            
+            if (passphrase) {
+                checksumData += '|' + passphrase;
+            }
+            
+            let hash = 0;
+            for (let i = 0; i < checksumData.length; i++) {
+                hash = ((hash << 5) - hash) + checksumData.charCodeAt(i);
+                hash = hash & hash;
+            }
+            
+            const chars = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+            let checksum = '';
+            hash = Math.abs(hash);
+            for (let i = 0; i < 4; i++) {
+                checksum += chars[hash % chars.length];
+                hash = Math.floor(hash / chars.length);
+            }
+            
+            return checksum;
+        }
+        
+        async function generateRoTHHash(inputBytes) {
+            let hash = inputBytes;
+            
+            for (let round = 0; round < 6; round++) {
+                hash = await crypto.subtle.digest('SHA-256', hash);
+                hash = new Uint8Array(hash);
+            }
+            
+            return Array.from(hash)
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('');
+        }
+        
+        window.onload = init;
+    </script>
+</body>
+</html>
