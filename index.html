@@ -574,7 +574,8 @@
         
         const passphrase = document.getElementById('passphrase').value.trim();
         const hashInput = prepareHashInput(vertexRotations, passphrase);
-        const checksum = generateChecksum(vertexRotations);
+        const checksum = generateChecksum(vertexRotations, passphrase);
+
         
         const seedHash = await generateRoTHHash(hashInput);
         
@@ -647,32 +648,38 @@
         return inputBytes;
     }
     
-    function generateChecksum(rotations) {
-        let checksumData = '';
-        Object.keys(rotations).forEach(vertex => {
-            const rot = rotations[vertex];
-            const degX = ((rot.x * 180/Math.PI) % 360 + 360) % 360;
-            const degY = ((rot.y * 180/Math.PI) % 360 + 360) % 360;
-            const degZ = ((rot.z * 180/Math.PI) % 360 + 360) % 360;
-            checksumData += Math.round(degX * 10) + ',' + Math.round(degY * 10) + ',' + Math.round(degZ * 10) + ';';
-        });
-        
-            let hash = 0;
-            for (let i = 0; i < checksumData.length; i++) {
-                hash = ((hash << 5) - hash) + checksumData.charCodeAt(i);
-                hash = hash & hash;
-            }
-            
-            const chars = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-            let checksum = '';
-            hash = Math.abs(hash);
-            for (let i = 0; i < 4; i++) {
-                checksum += chars[hash % chars.length];
-                hash = Math.floor(hash / chars.length);
-            }
-            
-            return checksum;
-        }
+    function generateChecksum(rotations, passphrase = '') {
+    let checksumData = '';
+    Object.keys(rotations).forEach(vertex => {
+        const rot = rotations[vertex];
+        const degX = ((rot.x * 180/Math.PI) % 360 + 360) % 360;
+        const degY = ((rot.y * 180/Math.PI) % 360 + 360) % 360;
+        const degZ = ((rot.z * 180/Math.PI) % 360 + 360) % 360;
+        checksumData += Math.round(degX * 10) + ',' + Math.round(degY * 10) + ',' + Math.round(degZ * 10) + ';';
+    });
+    
+    // Legg til passfrase i checksum
+    if (passphrase) {
+        checksumData += '|' + passphrase;
+    }
+    
+    let hash = 0;
+    for (let i = 0; i < checksumData.length; i++) {
+        hash = ((hash << 5) - hash) + checksumData.charCodeAt(i);
+        hash = hash & hash;
+    }
+    
+    const chars = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let checksum = '';
+    hash = Math.abs(hash);
+    for (let i = 0; i < 4; i++) {
+        checksum += chars[hash % chars.length];
+        hash = Math.floor(hash / chars.length);
+    }
+    
+    return checksum;
+}
+
         
         async function generateRoTHHash(inputBytes) {
             // Simplified RoTH implementation using SHA-256 repeatedly
