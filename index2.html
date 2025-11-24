@@ -25,23 +25,9 @@
     margin-bottom: 0;  /* Legg til */
 }
 
-#canvas-container {
-    position: relative;
-    width: 100%;
-    height: 65vh;
-    min-height: 400px;
-    max-height: 600px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0;  /* Endre fra 30px 0 til 0 */
-}
 
-.bottom-section {
-    max-width: 600px;
-    margin: 0 auto 50px;  /* Endre fra 0 auto 50px */
-    padding: 0 20px;
-}
+
+
 
         
  /*   .header {
@@ -83,6 +69,16 @@
         color: white;
         box-shadow: 0 8px 25px rgba(44,62,80,0.3);
     }
+
+        .controls-hint {
+    text-align: center;
+    padding: 15px 20px;
+    font-size: clamp(13px, 2.8vw, 15px);
+    color: #7f8c8d;
+    background: rgba(255,255,255,0.5);
+    border-top: 1px solid rgba(0,0,0,0.05);
+}
+
     
  /*   #canvas-container {
         position: relative;
@@ -95,7 +91,19 @@
         justify-content: center;
         margin: 30px 0;
     } */
-    
+
+#canvas-container {
+    position: relative;
+    width: 100%;
+    height: 65vh;
+    min-height: 400px;
+    max-height: 600px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;  /* Endre fra 30px 0 til 0 */
+}
+        
     #coordinates-overlay {
         position: absolute;
         top: 50%;
@@ -132,13 +140,26 @@
         letter-spacing: 3px;
         color: #2c3e50;
     }
-    
+  </div> <!-- slutt på canvas-container -->
+
+<div class="controls-hint">
+    En finger: Roter X/Y • To fingre: Vri Z-akse
+</div>
+
+<div class="bottom-section">
+  
   /*  .bottom-section {
         max-width: 600px;
         margin: 0 auto 50px;
         padding: 0 20px;
     } */
-    
+
+.bottom-section {
+    max-width: 600px;
+    margin: 0 auto 50px;  /* Endre fra 0 auto 50px */
+    padding: 0 20px;
+}
+        
     #passphrase {
         width: 100%;
         padding: 20px;
