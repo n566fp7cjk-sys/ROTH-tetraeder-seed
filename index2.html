@@ -173,8 +173,30 @@
         border-color: #2c3e50;
         box-shadow: 0 4px 20px rgba(44,62,80,0.2);
     }
-    
+        
     .generate-btn {
+    width: 100%;
+    padding: 22px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: clamp(18px, 4vw, 22px);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(44,62,80,0.3);
+    margin-bottom: 20px;  /* Endre fra 30px til 20px */
+}
+
+#passphrase {
+    width: 100%;
+    padding: 20px;
+    margin: 20px 0 0 0;  /* Endre til kun top margin */
+    /* resten som før */
+}
+
+  /*  .generate-btn {
         width: 100%;
         padding: 22px;
         background: #2c3e50;
@@ -187,7 +209,7 @@
         transition: all 0.3s;
         box-shadow: 0 4px 15px rgba(44,62,80,0.3);
         margin-bottom: 30px;
-    }
+    }*/
     .generate-btn:hover {
         transform: translateY(-3px);
         box-shadow: 0 8px 25px rgba(44,62,80,0.4);
