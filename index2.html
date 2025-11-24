@@ -560,7 +560,7 @@
             .map(b => b.toString(16).padStart(2, '0'))
             .join('');
     }
-    // Scroll zones
+// Scroll zones
 document.querySelectorAll('.scroll-zone').forEach(zone => {
     let isScrolling = false;
     let startY = 0;
@@ -568,32 +568,35 @@ document.querySelectorAll('.scroll-zone').forEach(zone => {
     zone.addEventListener('mousedown', (e) => {
         isScrolling = true;
         startY = e.clientY;
+        e.preventDefault();
         e.stopPropagation();
     });
     
     zone.addEventListener('touchstart', (e) => {
         isScrolling = true;
         startY = e.touches[0].clientY;
-        e.stopPropagation();
-    });
+        e.preventDefault();
+    }, { passive: false });
     
     document.addEventListener('mousemove', (e) => {
         if (!isScrolling) return;
+        e.preventDefault();
         const deltaY = startY - e.clientY;
-        window.scrollBy(0, deltaY * 0.5);
+        window.scrollBy({ top: deltaY, behavior: 'instant' });
         startY = e.clientY;
     });
     
     document.addEventListener('touchmove', (e) => {
         if (!isScrolling) return;
         const deltaY = startY - e.touches[0].clientY;
-        window.scrollBy(0, deltaY * 0.5);
+        window.scrollBy({ top: deltaY, behavior: 'instant' });
         startY = e.touches[0].clientY;
-    });
+    }, { passive: true });
     
     document.addEventListener('mouseup', () => isScrolling = false);
     document.addEventListener('touchend', () => isScrolling = false);
 });
+
 
     window.onload = init;
 </script>
