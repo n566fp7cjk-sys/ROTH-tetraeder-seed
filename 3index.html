@@ -26,6 +26,26 @@
 }
 
 
+.copy-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    margin-left: 10px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    vertical-align: middle;
+}
+.copy-btn:hover {
+    background: #34495e;
+    transform: translateY(-1px);
+}
+.copy-btn:active {
+    transform: translateY(0);
+}
 
 
 
@@ -246,6 +266,63 @@
         border: 2px solid #e9ecef;
         color: #495057;
     }
+.about-section {
+    max-width: 800px;
+    margin: 50px auto 30px;
+    padding: 30px;
+    background: white;
+    border-radius: 16px;
+    border: 2px solid #e0e0e0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+.about-section h2 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: clamp(20px, 4vw, 28px);
+}
+.about-section h3 {
+    color: #34495e;
+    margin-top: 25px;
+    margin-bottom: 12px;
+    font-size: clamp(16px, 3.5vw, 20px);
+}
+.about-section p {
+    line-height: 1.8;
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: clamp(14px, 3vw, 16px);
+}
+.about-section ul {
+    margin: 15px 0;
+    padding-left: 25px;
+}
+.about-section li {
+    margin: 8px 0;
+    line-height: 1.7;
+    color: #2c3e50;
+}
+.weakness-table {
+    width: 100%;
+    margin: 20px 0;
+    border-collapse: collapse;
+    font-size: clamp(12px, 2.5vw, 14px);
+}
+.weakness-table th {
+    background: #2c3e50;
+    color: white;
+    padding: 12px;
+    text-align: left;
+}
+.weakness-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+.weakness-table tr:hover {
+    background: #f8f9fa;
+}
+
+
+        
 </style>
 
 </head>
@@ -523,14 +600,23 @@
             output += `X:${rotX.toFixed(1)}° Y:${rotY.toFixed(1)}° Z:${rotZ.toFixed(1)}°<br>`;
         });
         
+
         output += `<br><strong>Passfrase:</strong> ${passphrase || '(ingen)'}<br><br>`;
-        output += `<strong>RoTH v6.2 Hash:</strong><br>`;
+        output += `<strong>RoTH v6.2 Hash:</strong> `;
+        output += `<button class="copy-btn" onclick="copyHash('${seedHash}')">Kopier</button><br>`;
         output += `<code>${seedHash}</code><br><br>`;
-        output += `<strong>Entropi:</strong> ~${passphrase ? '626' : '496'} bits`;
+        
         
         document.getElementById('seed-output').innerHTML = output;
         document.getElementById('seed-output').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+
+function copyHash(hash) {
+    navigator.clipboard.writeText(hash).then(() => {
+        alert('✓ Hash kopiert!');
+    });
+}
+
     
     function prepareHashInput(rotations, passphrase) {
         const encoder = new TextEncoder();
@@ -585,6 +671,81 @@
     
     window.onload = init;
 </script>
+<div class="about-section">
+    <h2>Om RoTH v6.2</h2>
+    
+    <p>RoTH (Rotation-based Tetrahedric Hash) er en eksperimentell hash-funksjon som kombinerer geometrisk entropi med kryptografisk sikkerhet.</p>
+    
+    <h3>Hvordan fungerer det?</h3>
+    <p>Du roterer et tetraeder (FireKant) i 3D-rom. Hver av de fire verteksene (ψ₁, ψ₂, ψ₃, ψ₄) får sin egen unike rotasjon på tre akser (X, Y, Z). Dette gir totalt 12 vinkler som kombineres til en unik seed.</p>
+    
+    <h3>Sikkerhet</h3>
+    <ul>
+        <li><strong>496 bits entropi</strong> - Kun fra rotasjonene</li>
+        <li><strong>626 bits entropi</strong> - Med passfrase</li>
+        <li><strong>Sterkere enn atomer i universet</strong> - 2^496 ≈ 10^149 kombinasjoner</li>
+    </ul>
+    
+    <h3>Strukturell sammenligning med Keccak (SHA-3)</h3>
+    <p>RoTH v6.2 eliminerer alle kjente strukturelle svakheter i Keccak ved design:</p>
+    
+    <table class="weakness-table">
+        <tr>
+            <th>Svakhet i Keccak</th>
+            <th>Årsak</th>
+            <th>I RoTH?</th>
+        </tr>
+        <tr>
+            <td>Rotasjonssymmetri</td>
+            <td>5×5 rutenett + symmetrisk mapping</td>
+            <td>❌ Nei - Asymmetrisk lane-mapping</td>
+        </tr>
+        <tr>
+            <td>Smale spor (narrow trails)</td>
+            <td>Svak θ-diffusjon</td>
+            <td>❌ Nei - Aggressiv θ-kobling</td>
+        </tr>
+        <tr>
+            <td>Rutenettstruktur</td>
+            <td>(x,y) indeksering</td>
+            <td>❌ Nei - Ingen koordinatgeometri</td>
+        </tr>
+        <tr>
+            <td>Lineær θ-svakhet</td>
+            <td>Sirkulant lineært lag</td>
+            <td>❌ Nei - Ikke-sirkulant mixing</td>
+        </tr>
+        <tr>
+            <td>Rho offset-klasser</td>
+            <td>Mønstre modulo 64</td>
+            <td>❌ Nei - Unik rotasjon per lane/runde</td>
+        </tr>
+        <tr>
+            <td>χ algebraisk svakhet</td>
+            <td>Lav grad tidlig</td>
+            <td>❌ Nei - Rotasjoner i χ-nonlinearitet</td>
+        </tr>
+        <tr>
+            <td>Zero-sum distinguishers</td>
+            <td>Algebraisk regularitet</td>
+            <td>❌ Nei - Irregulær mapping</td>
+        </tr>
+    </table>
+    
+    <h3>Design-prinsipper</h3>
+    <ul>
+        <li><strong>16 lanes</strong> i lineær konfigurasjon (ikke 25 i rutenett)</li>
+        <strong>π+ρ mapping</strong> definert rent aritmetisk</li>
+        <li><strong>Runde-avhengige rotasjoner</strong> - Unik for hver lane og runde</li>
+        <li><strong>Forsterket θ-lag</strong> - Raskere diffusjon enn Keccak</li>
+        <li><strong>Forbedret χ</strong> - Rotasjoner innebygd i nonlineært lag</li>
+    </ul>
+    
+    <h3>Bruksområder</h3>
+    <p>Denne implementasjonen er eksperimentell og pedagogisk. Den demonstrerer hvordan geometrisk entropi kan brukes til å generere kryptografisk sterke seeds på en intuitiv og visuelt tiltalende måte.</p>
+    
+    <p><em>⚠️ Merk: Dette er en proof-of-concept. For produksjonsbruk, bruk etablerte standarder som SHA-3.</em></p>
+</div>
 
 </body>
 </html>
