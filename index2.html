@@ -44,6 +44,32 @@
     margin: 0;  /* Endre fra 30px 0 til 0 */
 }
 
+/* Legg til etter #canvas-container */
+.scroll-zone {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 15%;  /* 15% på hver side */
+    z-index: 10;
+    cursor: ns-resize;  /* Opp/ned pil cursor */
+}
+
+.scroll-zone-left {
+    left: 0;
+}
+
+.scroll-zone-right {
+    right: 0;
+}
+
+/* På mobil - gjør større */
+@media (max-width: 768px) {
+    .scroll-zone {
+        width: 20%;
+    }
+}
+
+        
 .bottom-section {
     max-width: 600px;
     margin: 0 auto 50px;  /* Endre fra 0 auto 50px */
@@ -220,6 +246,8 @@
     </div>
 
 <div id="canvas-container">
+    <div class="scroll-zone scroll-zone-left"></div>
+    <div class="scroll-zone scroll-zone-right"></div>
     <div id="coordinates-overlay">
         <div class="roth-title">RoTH v6.2</div>
         <div class="coord-row">X: <span id="rot-x">0.0°</span></div>
@@ -532,10 +560,43 @@
             .map(b => b.toString(16).padStart(2, '0'))
             .join('');
     }
+    // Scroll zones
+document.querySelectorAll('.scroll-zone').forEach(zone => {
+    let isScrolling = false;
+    let startY = 0;
     
+    zone.addEventListener('mousedown', (e) => {
+        isScrolling = true;
+        startY = e.clientY;
+        e.stopPropagation();
+    });
+    
+    zone.addEventListener('touchstart', (e) => {
+        isScrolling = true;
+        startY = e.touches[0].clientY;
+        e.stopPropagation();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (!isScrolling) return;
+        const deltaY = startY - e.clientY;
+        window.scrollBy(0, deltaY * 0.5);
+        startY = e.clientY;
+    });
+    
+    document.addEventListener('touchmove', (e) => {
+        if (!isScrolling) return;
+        const deltaY = startY - e.touches[0].clientY;
+        window.scrollBy(0, deltaY * 0.5);
+        startY = e.touches[0].clientY;
+    });
+    
+    document.addEventListener('mouseup', () => isScrolling = false);
+    document.addEventListener('touchend', () => isScrolling = false);
+});
+
     window.onload = init;
 </script>
-```
 
 </body>
 </html>
